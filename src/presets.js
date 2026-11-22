@@ -2,7 +2,7 @@ export const DEFAULTS = {
   // form
   shape: 'drop', width: 1, height: 1, depth: 1, taper: 0, wobble: 0.35, seed: 1,
   // material
-  color: '#3d7bff', color2: '#ff7ad9', material: 'matte', filling: true, limbSame: true, limbColor: '#ffffff',
+  color: '#3d7bff', color2: '#ff7ad9', material: 'matte', limbSame: true, limbColor: '#ffffff',
   // face
   eyes: 'dots', eyeSize: 1, eyeSpacing: 0.36, faceY: 0.55, mouth: true, mouthGap: 0.4, mouthSize: 1,
   brows: 'auto', shine: true,

@@ -61,7 +61,7 @@ scene.add(hero.root, hero.fx);
 
 /* ---------------- rebuild pipeline ---------------- */
 const MESH_KEYS = new Set(['shape', 'width', 'height', 'depth', 'taper', 'wobble', 'seed']);
-const MAT_KEYS = new Set(['color', 'color2', 'accColor', 'glassColor', 'material', 'limbSame', 'limbColor', 'filling']);
+const MAT_KEYS = new Set(['color', 'color2', 'accColor', 'glassColor', 'material', 'limbSame', 'limbColor']);
 const RUNTIME_KEYS = new Set(['emotion', 'anim', 'speed', 'blink', 'follow']);
 const SCENE_KEYS = new Set();
 const pending = { mesh: null, mat: false, parts: false, scene: false };

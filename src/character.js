@@ -80,7 +80,6 @@ export class Character {
     this.bodyMesh = new THREE.Mesh(new THREE.BufferGeometry());
     this.local.add(this.bodyMesh);
     this.furGroup = new THREE.Group(); this.local.add(this.furGroup);
-    this.core = new THREE.Group(); this.local.add(this.core);       // fluffy filling inside glass
     this.halo = null;
     this.glowShell = new THREE.Mesh(new THREE.BufferGeometry()); this.glowShell.visible = false; this.glowShell.renderOrder = 2;
     this.local.add(this.glowShell);
@@ -127,8 +126,6 @@ export class Character {
   syncBounds(geo) {
     const bb = geo.boundingBox;
     const c = bb.getCenter(new V3());
-    this.core.position.copy(c);
-    for (const m of this.core.children) { m.geometry = geo; m.position.copy(c).negate(); }
     for (const mat of [this.bodyMat, this.glowShell.material, this.limbMat, this.partMat]) {
       const u = mat && (mat.userData.uniforms || mat.uniforms);
       if (u && u.uYmin) { u.uYmin.value = bb.min.y; u.uYmax.value = bb.max.y; }
@@ -139,7 +136,7 @@ export class Character {
     const kind = normalizeMaterial(st.material);
     this.kind = kind;
     for (const m of [this.bodyMat, this.limbMat, this.partMat]) m && m.dispose();
-    for (const s of [...this.furGroup.children, ...this.core.children]) s.material.dispose();
+    for (const s of this.furGroup.children) s.material.dispose();
     if (this.glowShell.material && this.glowShell.material.dispose) this.glowShell.material.dispose();
     this.bodyMat = createBodyMaterial(kind, st.color, true, st.color2);
     this.partMat = createBodyMaterial(kind, st.color, false, st.color2);
@@ -150,15 +147,6 @@ export class Character {
 
     this.furGroup.clear();
     if (kind === 'plush') for (const m of createFurShells(st.color)) this.furGroup.add(new THREE.Mesh(geo, m));
-
-    // glass: optional fluffy filling, slightly smaller than the shell
-    this.core.clear();
-    if (kind === 'glass' && st.filling) {
-      const base = createBodyMaterial('plush', st.color, true);
-      this.core.add(new THREE.Mesh(geo, base));
-      for (const m of createFurShells(st.color, 12, 0.08)) this.core.add(new THREE.Mesh(geo, m));
-      this.core.scale.setScalar(0.8);
-    }
 
     // glow: soft halo around the silhouette
     this.glowShell.visible = kind === 'glow';

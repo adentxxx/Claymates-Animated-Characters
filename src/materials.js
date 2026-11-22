@@ -64,9 +64,34 @@ function addRim(mat, color, strength, power) {
   return mat;
 }
 
+/* Candy plastic: saturated core, translucent lighter edges (light passing through the
+   thin rim), soft inner glow. Added on top of normal PBR shading. */
+function addCandy(mat, color) {
+  const edge = new THREE.Color().setHSL(0, 0, 0).copy(color).lerp(new THREE.Color(0x9fe8ff), 0.35).lerp(new THREE.Color(0xffffff), 0.25);
+  const hsl = {}; color.getHSL(hsl);
+  const deep = new THREE.Color().setHSL(hsl.h, Math.min(1, hsl.s * 1.1), hsl.l * 0.42);
+  const uniforms = { uEdge: { value: edge }, uDeep: { value: deep }, uBase: { value: color.clone() } };
+  mat.userData.uniforms = uniforms;
+  mat.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, uniforms);
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>' + String.fromCharCode(10) + 'uniform vec3 uEdge; uniform vec3 uDeep; uniform vec3 uBase;')
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+        {
+          float facing = clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0);
+          float fr = 1.0 - facing;
+          // deeper colour where the body is "thick" (facing the camera), lighter at the rim
+          diffuseColor.rgb = mix(uDeep, uBase, smoothstep(0.05, 0.75, fr));
+          totalEmissiveRadiance += uBase * 0.12 * pow(facing, 2.0) + uEdge * pow(fr, 2.0) * 1.05;
+        }`);
+  };
+  mat.customProgramCacheKey = () => 'candy';
+  return mat;
+}
+
 export const MATERIALS = {
   matte: { label: 'Матовый' },
-  glass: { label: 'Стекло-желе' },
+  glass: { label: 'Стекло' },
   glow:  { label: 'Свечение' },
   plush: { label: 'Плюш' },
 };
@@ -139,16 +164,16 @@ export function createBodyMaterial(kind, color, vertexColors = true, color2 = '#
       m = new THREE.MeshPhysicalMaterial({ color: c, vertexColors, roughness: 0.62, sheen: 0.55, sheenRoughness: 0.55, sheenColor: c.clone().lerp(new THREE.Color(0xffffff), 0.5), envMapIntensity: 0.8 });
       return addClaySurface(m, 0, 1);
     case 'glass':
-      // clear plastic jelly with strong highlights
+      // glossy translucent candy plastic: saturated body, light passing through thin edges,
+      // crisp clear-coat highlights
       m = new THREE.MeshPhysicalMaterial({
-        color: c.clone().lerp(new THREE.Color(0xffffff), 0.5), vertexColors: false,
-        // gentler refraction: stretched shapes have thin, steep edges that bent light too hard
-        transmission: 1, thickness: 0.38, ior: 1.22, roughness: 0.04, metalness: 0,
-        attenuationColor: c.clone().lerp(new THREE.Color(0xffffff), 0.3), attenuationDistance: 2.2, specularIntensity: 1,
-        clearcoat: 1, clearcoatRoughness: 0.03, iridescence: 0.3, iridescenceIOR: 1.25, envMapIntensity: 1.9,
-        dithering: true, // no colour banding in smooth gradients
+        color: c, vertexColors: false,
+        transmission: 0.3, thickness: 1.4, ior: 1.32, roughness: 0.05, metalness: 0,
+        attenuationColor: c, attenuationDistance: 0.6,
+        specularIntensity: 1, specularColor: new THREE.Color(0xffffff),
+        clearcoat: 1, clearcoatRoughness: 0.015, envMapIntensity: 2.8, dithering: true,
       });
-      return addRim(m, c.clone().lerp(new THREE.Color(0xffffff), 0.6), 0.55, 3.2);
+      return addCandy(m, c);
     case 'glassSolid':
       // limbs & ears of glass characters: glossy candy instead of thin dark refraction
       m = new THREE.MeshPhysicalMaterial({ color: c.clone().lerp(new THREE.Color(0xffffff), 0.1), roughness: 0.08, clearcoat: 1, clearcoatRoughness: 0.03, iridescence: 0.3, envMapIntensity: 1.6 });
