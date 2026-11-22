@@ -149,16 +149,6 @@ body.panel-open #panel { width: var(--panel-w); }
 }
 .jelly-hit { position: absolute; top: 4px; width: 24px; height: 24px; border-radius: 50%; outline: none; }
 .jelly-hit:focus-visible { box-shadow: 0 0 0 3px rgba(91,92,240,.35); }
-/* scale under the track, no numbers */
-.jelly-marks { position: relative; height: 8px; margin-top: 6px; }
-.jelly-marks i {
-  position: absolute; top: 0; left: calc(12px + (100% - 24px) * var(--p, 0));
-  width: 1.5px; height: 4px; margin-left: -.75px; border-radius: 1px;
-  background: #e3e4ec; transition: background .2s ease, height .25s cubic-bezier(.3,1.5,.5,1);
-}
-.jelly-marks i.major { height: 8px; background: #c4c6d6; }
-.jelly-marks i.on { background: var(--muted); }
-.jelly-marks i.major.on { background: var(--ink); }
 
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { padding: 8px 12px; border-radius: 10px; background: var(--soft); font-size: 13px; font-weight: 700; transition: .15s; }

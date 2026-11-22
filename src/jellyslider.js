@@ -49,28 +49,12 @@ export function createJellySlider(o) {
       <div class="jelly-goo"><div class="jelly-blob jelly-drop"></div><div class="jelly-blob jelly-thumb"></div></div>
       <div class="jelly-label"></div>
       <div class="jelly-hit" role="slider" tabindex="0"></div>
-    </div>
-    <div class="jelly-marks" aria-hidden="true"></div>`;
+    </div>`;
   const q = (s) => root.querySelector(s);
   const rail = q('.jelly-rail'), fill = q('.jelly-fill'), thumb = q('.jelly-thumb'), drop = q('.jelly-drop');
   const dropLabel = q('.jelly-label'), hit = q('.jelly-hit');
   hit.setAttribute('aria-label', o.label || '');
   hit.setAttribute('aria-valuemin', o.min); hit.setAttribute('aria-valuemax', o.max);
-
-  // scale under the track (no numbers): a mark every 5%, a taller one every 25%; passed ones light up
-  const marks = [];
-  for (let p = 0; p <= 100; p += 5) {
-    const m = document.createElement('i');
-    m.style.setProperty('--p', p / 100);
-    if (p % 25 === 0) m.className = 'major';
-    q('.jelly-marks').appendChild(m); marks.push(m);
-  }
-  let litPct = -1;
-  const lightScale = (pct) => {
-    const v = Math.round(pct / 5) * 5;
-    if (v === litPct) return; litPct = v;
-    marks.forEach((m, i) => m.classList.toggle('on', i * 5 <= v && v > 0));
-  };
 
   const fmt = o.format || ((v) => String(+v.toFixed(2)).replace('.', ','));
   const snap = (v) => { const s = o.step || 0.01; return clamp(Math.round((v - o.min) / s) * s + o.min, o.min, o.max); };
@@ -169,7 +153,6 @@ export function createJellySlider(o) {
       hit.style.left = x - R + 'px';
       hit.setAttribute('aria-valuenow', v);
       hit.setAttribute('aria-valuetext', fmt(v));
-      lightScale(toR(x) * 100);
       if (!dragging && [X, DX, DY, DS, PS].every((s) => settled(s, 0.005))) awake = false;
     },
   });
