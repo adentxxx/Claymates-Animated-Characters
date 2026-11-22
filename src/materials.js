@@ -78,7 +78,7 @@ export const normalizeMaterial = (k) => LEGACY[k] || (MATERIALS[k] ? k : 'matte'
 function glowMaterial(c1, c2, vertexColors) {
   const m = new THREE.MeshPhysicalMaterial({
     color: c1.clone().lerp(new THREE.Color(0xffffff), 0.55), vertexColors: false,
-    roughness: 0.5, transmission: 0.75, thickness: 1.2, ior: 1.25, clearcoat: 0.35, clearcoatRoughness: 0.5,
+    roughness: 0.5, transmission: 0.75, thickness: 1.2, ior: 1.25, clearcoat: 0.35, clearcoatRoughness: 0.5, dithering: true,
   });
   const uniforms = { uC1: { value: c1.clone() }, uC2: { value: c2.clone() }, uYmin: { value: 0 }, uYmax: { value: 2 } };
   m.userData.uniforms = uniforms;
@@ -142,11 +142,13 @@ export function createBodyMaterial(kind, color, vertexColors = true, color2 = '#
       // clear plastic jelly with strong highlights
       m = new THREE.MeshPhysicalMaterial({
         color: c.clone().lerp(new THREE.Color(0xffffff), 0.5), vertexColors: false,
-        transmission: 1, thickness: 0.55, ior: 1.38, roughness: 0.03, metalness: 0,
-        attenuationColor: c.clone().lerp(new THREE.Color(0xffffff), 0.25), attenuationDistance: 1.6, specularIntensity: 1,
-        clearcoat: 1, clearcoatRoughness: 0.02, iridescence: 0.4, iridescenceIOR: 1.3, envMapIntensity: 2.2,
+        // gentler refraction: stretched shapes have thin, steep edges that bent light too hard
+        transmission: 1, thickness: 0.38, ior: 1.22, roughness: 0.04, metalness: 0,
+        attenuationColor: c.clone().lerp(new THREE.Color(0xffffff), 0.3), attenuationDistance: 2.2, specularIntensity: 1,
+        clearcoat: 1, clearcoatRoughness: 0.03, iridescence: 0.3, iridescenceIOR: 1.25, envMapIntensity: 1.9,
+        dithering: true, // no colour banding in smooth gradients
       });
-      return addRim(m, c.clone().lerp(new THREE.Color(0xffffff), 0.6), 0.9, 2.6);
+      return addRim(m, c.clone().lerp(new THREE.Color(0xffffff), 0.6), 0.55, 3.2);
     case 'glassSolid':
       // limbs & ears of glass characters: glossy candy instead of thin dark refraction
       m = new THREE.MeshPhysicalMaterial({ color: c.clone().lerp(new THREE.Color(0xffffff), 0.1), roughness: 0.08, clearcoat: 1, clearcoatRoughness: 0.03, iridescence: 0.3, envMapIntensity: 1.6 });
@@ -169,14 +171,21 @@ uniform float uLayer;
 uniform float uDensity;
 varying vec3 vObjPos;
 float furHash(vec3 p){ p = fract(p*0.3183099 + 0.1); p *= 17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
+float furNoise(vec3 x){
+  vec3 i = floor(x); vec3 f = fract(x); f = f*f*(3.0-2.0*f);
+  return mix(mix(mix(furHash(i), furHash(i+vec3(1,0,0)), f.x), mix(furHash(i+vec3(0,1,0)), furHash(i+vec3(1,1,0)), f.x), f.y),
+             mix(mix(furHash(i+vec3(0,0,1)), furHash(i+vec3(1,0,1)), f.x), mix(furHash(i+vec3(0,1,1)), furHash(i+vec3(1,1,1)), f.x), f.y), f.z);
+}
+// fixed, non axis-aligned rotation so the noise grid never lines up with flat faces
+const mat3 FUR_ROT = mat3(0.788, -0.418, 0.452, 0.556, 0.787, -0.267, -0.244, 0.454, 0.857);
 `;
 export function createFurShells(color, count = 16, length = 0.065) {
   const c = new THREE.Color(color);
   const mats = [];
   for (let i = 1; i <= count; i++) {
     const layer = i / count;
-    const m = new THREE.MeshStandardMaterial({ color: c, roughness: 1, vertexColors: true });
-    const uniforms = { uLayer: { value: layer }, uLen: { value: length }, uDensity: { value: 110 } };
+    const m = new THREE.MeshStandardMaterial({ color: c, roughness: 1, vertexColors: true, dithering: true });
+    const uniforms = { uLayer: { value: layer }, uLen: { value: length }, uDensity: { value: 95 } };
     m.onBeforeCompile = (sh) => {
       Object.assign(sh.uniforms, uniforms);
       sh.vertexShader = sh.vertexShader
@@ -189,12 +198,11 @@ export function createFurShells(color, count = 16, length = 0.065) {
         .replace('#include <common>', '#include <common>\n' + FUR_GLSL)
         .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
           {
-            vec3 fp = vObjPos * uDensity;
-            vec3 cell = floor(fp);
-            vec3 f = fract(fp) - 0.5;
-            float rnd = furHash(cell);
-            float r = (1.0 - uLayer) * (0.55 + 0.5 * rnd);
-            if (length(f) > r || rnd < uLayer * 0.35) discard;
+            // strands from smooth noise (not a regular lattice): slicing a lattice with a
+            // nearly flat surface made moire rings, especially seen through glass
+            vec3 fp = FUR_ROT * vObjPos * uDensity;
+            float n = furNoise(fp) * 0.62 + furNoise(fp * 2.17 + 7.3) * 0.38;
+            if (n < 0.06 + uLayer * 0.82) discard;
           }`)
         .replace('#include <color_fragment>', `#include <color_fragment>
           diffuseColor.rgb *= mix(0.55, 1.12, uLayer);`);
