@@ -65,14 +65,13 @@ function addRim(mat, color, strength, power) {
 }
 
 export const MATERIALS = {
-  clay:  { label: 'Пластилин' },
   matte: { label: 'Матовый' },
   glass: { label: 'Стекло-желе' },
   glow:  { label: 'Свечение' },
   plush: { label: 'Плюш' },
 };
-const LEGACY = { vinyl: 'matte', glossy: 'glass' };
-export const normalizeMaterial = (k) => LEGACY[k] || (MATERIALS[k] || k === 'glassSolid' ? k : 'clay');
+const LEGACY = { vinyl: 'matte', glossy: 'glass', clay: 'matte' };
+export const normalizeMaterial = (k) => LEGACY[k] || (MATERIALS[k] ? k : 'matte');
 
 /* Soft gradient glow: two-colour vertical gradient emitted from inside,
    frosted transmission and a bright fresnel rim. */

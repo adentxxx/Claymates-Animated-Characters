@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { makeSDF, Surface } from './sdf.js';
 import { buildBodyGeometry } from './mesher.js';
-import { createBodyMaterial, createFurShells, createFaceMaterials, createAccMaterial, createGlowShell, normalizeMaterial, GOLD, LENS, LEAF } from './materials.js';
+import { createBodyMaterial, createFurShells, createFaceMaterials, createGlowShell, normalizeMaterial } from './materials.js';
 import { EMOTIONS, POSE_KEYS, newPose, computePose } from './animations.js';
 
 const V3 = THREE.Vector3;
@@ -103,7 +103,7 @@ export class Character {
     this.ptr = { x: 0, y: 0 };
     this.baseY = 0;
     this.legH = 0;
-    this.arms = []; this.legs = []; this.eyes = []; this.brows = []; this.blushes = [];
+    this.arms = []; this.legs = []; this.eyes = []; this.brows = [];
     this.mouthKey = '';
     this.browVis = 0;
     this.faceOff = 0;
@@ -142,9 +142,8 @@ export class Character {
     for (const s of [...this.furGroup.children, ...this.core.children]) s.material.dispose();
     if (this.glowShell.material && this.glowShell.material.dispose) this.glowShell.material.dispose();
     this.bodyMat = createBodyMaterial(kind, st.color, true, st.color2);
-    const limbKind = kind === 'glass' ? 'glassSolid' : kind;
-    this.partMat = createBodyMaterial(limbKind, st.color, false, st.color2);
-    this.limbMat = createBodyMaterial(limbKind, st.limbSame ? st.color : st.limbColor, false, st.color2);
+    this.partMat = createBodyMaterial(kind, st.color, false, st.color2);
+    this.limbMat = createBodyMaterial(kind, st.limbSame ? st.color : st.limbColor, false, st.color2);
     this.bodyMesh.material = this.bodyMat;
     this.faceOff = kind === 'plush' ? 0.05 : 0;
     const geo = this.bodyMesh.geometry;
@@ -185,11 +184,13 @@ export class Character {
   // second copy of the face, limbs and accessories on the glass. three.js leaves transparent
   // objects out of that refraction pass, so for glass the extra parts are flagged transparent.
   syncTransmission() {
-    const glass = this.kind === 'glass';
+    // glass and glow are both transmissive
+    const refractive = this.kind === 'glass' || this.kind === 'glow';
     const visit = (o) => {
       if (!o.isMesh || !o.material) return;
       const m = o.material;
-      const want = glass || m.opacity < 1;
+      if (m.transmission > 0) return; // transmissive parts are already left out of the pass
+      const want = refractive || m.opacity < 1;
       if (m.transparent !== want) { m.transparent = want; m.needsUpdate = true; }
     };
     this.parts.traverse(visit);
@@ -214,7 +215,6 @@ export class Character {
     this.buildEyes(st);
     this.buildBrows(st);
     this.buildMouth(st);
-    this.buildBlush(st);
     this.buildArms(st);
     this.buildLegs(st);
     this.buildAccessories(st);
@@ -309,20 +309,6 @@ export class Character {
     this.parts.add(this.tear);
   }
 
-  buildBlush(st) {
-    this.blushes = [];
-    const L = this.L;
-    for (const side of [1, -1]) {
-      const m = mesh(new THREE.SphereGeometry(0.075 * L.es, 24, 12), this.fm.blush, false);
-      m.scale.set(1.35, 0.75, 0.2);
-      const hit = this.surf.frontSafe(side * (L.eyeDX + 0.1 * L.es), L.eyeY - 0.11 * L.es);
-      placeOnSurface(m, hit, 0.004 + this.faceOff);
-      m.visible = st.blush;
-      this.parts.add(m);
-      this.blushes.push(m);
-    }
-  }
-
   buildArms(st) {
     this.arms = [];
     if (st.arms === 'none') return;
@@ -378,11 +364,22 @@ export class Character {
   }
 
   buildAccessories(st) {
-    if (this.accMat) this.accMat.dispose();
-    if (this.glassMat) this.glassMat.dispose();
-    const A = this.accMat = createAccMaterial(st.accColor);
+    // accessories use the same material type as the body, each in its own colour
+    for (const m of this.accMats || []) m.dispose();
+    this.accMats = [];
+    const cache = {};
+    const accM = (color) => {
+      if (cache[color]) return cache[color];
+      const m = createBodyMaterial(this.kind || 'matte', color, false, st.color2);
+      const u = m.userData.uniforms;
+      if (u && u.uYmin) { u.uYmin.value = -0.3; u.uYmax.value = 0.4; }
+      this.accMats.push(m);
+      return (cache[color] = m);
+    };
+    const GOLD = accM('#ffc53d'), LEAF = accM('#5ccc4a'), LENS = accM('#24242c');
+    const A = accM(st.accColor);
     A.side = THREE.DoubleSide;
-    const G = this.glassMat = createAccMaterial(st.glassColor);
+    const G = accM(st.glassColor);
     const S = this.surf, box = this.box, k = st.accSize, L = this.L, fm = this.fm;
     const top = S.top(0) || { p: new V3(0, box.max.y, 0), n: Y.clone() };
     const hw = S.halfWidth(top.p.y - 0.22);
@@ -416,7 +413,7 @@ export class Character {
       }
       case 'crown': {
         const g = new THREE.Group();
-        const gold = GOLD.clone(); gold.side = THREE.DoubleSide;
+        const gold = GOLD; gold.side = THREE.DoubleSide;
         const band = mesh(new THREE.CylinderGeometry(R * 0.72, R * 0.78, R * 0.42, 48, 1, true), gold); band.position.y = R * 0.08;
         g.add(band);
         for (let i = 0; i < 5; i++) {
@@ -426,7 +423,7 @@ export class Character {
           const b = mesh(new THREE.SphereGeometry(R * 0.06, 12, 8), GOLD); b.position.copy(sp.position); b.position.y += R * 0.2;
           g.add(sp, b);
         }
-        const jewel = mesh(new THREE.SphereGeometry(R * 0.08, 16, 12), fm.pink); jewel.position.set(0, R * 0.08, R * 0.77); jewel.scale.z = 0.6;
+        const jewel = mesh(new THREE.SphereGeometry(R * 0.08, 16, 12), accM('#ff3d6e')); jewel.position.set(0, R * 0.08, R * 0.77); jewel.scale.z = 0.6;
         g.add(jewel);
         onTop(g, top); g.rotateZ(0.12);
         break;
@@ -434,7 +431,7 @@ export class Character {
       case 'party': {
         const g = new THREE.Group();
         const cone = mesh(new THREE.ConeGeometry(R * 0.55, R * 1.4, 40), A); cone.position.y = R * 0.6;
-        const pom = mesh(new THREE.SphereGeometry(R * 0.17, 20, 14), fm.white); pom.position.y = R * 1.32;
+        const pom = mesh(new THREE.SphereGeometry(R * 0.17, 20, 14), accM('#ffffff')); pom.position.y = R * 1.32;
         g.add(cone, pom);
         onTop(g, top); g.rotateZ(0.18);
         break;
@@ -453,7 +450,7 @@ export class Character {
       }
       case 'antenna': {
         const g = new THREE.Group(); const w = new THREE.Group(); g.add(w);
-        const st2 = mesh(new THREE.CylinderGeometry(0.016 * k, 0.016 * k, 0.34 * k, 10), fm.black); st2.position.y = 0.14 * k;
+        const st2 = mesh(new THREE.CylinderGeometry(0.016 * k, 0.016 * k, 0.34 * k, 10), accM('#2a2a33')); st2.position.y = 0.14 * k;
         const ball = mesh(new THREE.SphereGeometry(0.07 * k, 20, 14), A); ball.position.y = 0.33 * k;
         w.add(st2, ball);
         onTop(g, top); wobbly(w, 1.6);
@@ -670,9 +667,6 @@ export class Character {
     this.updateEyes(st, c, blinkK * c.eyeOpen, t);
     this.updateBrows(st, dt);
     this.updateMouth(st, c);
-    const blush = st.blush ? clamp(this.face.blush + c.blush, 0, 1) : 0;
-    this.fm.blush.opacity = 0.55 * blush;
-    for (const b of this.blushes) b.visible = blush > 0.02;
     this.updateTear(E, t);
 
     /* secondary motion */

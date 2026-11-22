@@ -119,7 +119,6 @@ function inflate(key, f2, x, y, z, h0, infl, rr) {
 
 const tri2b = (x, y) => tri2(x, y - 0.8, 0.9);
 const star2b = (x, y) => star2(x, y - 0.95, 0.88, 0.5);
-const boomer2 = (x, y) => smin(tri2(x - 0.15, y - 0.62, 0.6), seg2(x, y, 0.05, 0.8, -0.72, 1.9, 0.2), 0.35);
 
 /* ---------------- shape catalogue ---------------- */
 export const SHAPES = {
@@ -141,9 +140,6 @@ export const SHAPES = {
     return d;
   } },
   star:     { label: 'Звезда',    depth: 1,    f: (x, y, z) => inflate('star', star2b, x, y, z, 0.12, 0.5, 0.22) },
-  boomerang:{ label: 'Бумеранг',  depth: 1,    f: (x, y, z) => {
-    return inflate('boom', boomer2, x, y, z, 0.12, 0.45, 0.24);
-  } },
   ghost:    { label: 'Призрак',   depth: 0.95, f: (x, y, z) => {
     let d = capsule(x, y, z, 0, 0.75, 0, 0, 1.25, 0, 0.72);
     // wavy hem
@@ -157,13 +153,13 @@ export const SHAPES = {
 export function makeSDF(st) {
   const S = SHAPES[st.shape] || SHAPES.drop;
   const sx = st.width, sy = st.height, sz = st.depth * S.depth;
-  const lean = st.lean, taper = st.taper, wob = st.wobble, seed = st.seed | 0;
+  const taper = st.taper, wob = st.wobble, seed = st.seed | 0;
   const ks = min(sx, sy, sz);
   return (x, y, z) => {
     const py = y / sy;
     let wf = 1 - taper * (py - 0.9) * 0.5;
     if (wf < 0.3) wf = 0.3;
-    const px = (x - lean * py * py * 0.35) / (sx * wf);
+    const px = x / (sx * wf);
     const pz = z / (sz * wf);
     let d = S.f(px, py, pz) * ks * min(wf, 1);
     if (wob > 0 && d < 0.3 && d > -0.3) {

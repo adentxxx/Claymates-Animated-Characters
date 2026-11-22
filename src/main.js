@@ -59,15 +59,15 @@ const hero = new Character();
 scene.add(hero.root, hero.fx);
 
 /* ---------------- rebuild pipeline ---------------- */
-const MESH_KEYS = new Set(['shape', 'width', 'height', 'depth', 'taper', 'lean', 'wobble', 'seed']);
-const MAT_KEYS = new Set(['color', 'color2', 'material', 'limbSame', 'limbColor', 'filling']);
+const MESH_KEYS = new Set(['shape', 'width', 'height', 'depth', 'taper', 'wobble', 'seed']);
+const MAT_KEYS = new Set(['color', 'color2', 'accColor', 'glassColor', 'material', 'limbSame', 'limbColor', 'filling']);
 const RUNTIME_KEYS = new Set(['emotion', 'anim', 'speed', 'blink', 'follow']);
 const SCENE_KEYS = new Set();
 const pending = { mesh: null, mat: false, parts: false, scene: false };
 
 function onChange(k, live) {
   if (MESH_KEYS.has(k)) pending.mesh = live ? (pending.mesh === 'high' ? 'high' : 'low') : 'high';
-  else if (MAT_KEYS.has(k)) { pending.mat = true; if (k === 'material') pending.parts = true; }
+  else if (MAT_KEYS.has(k)) { pending.mat = true; pending.parts = true; } // limbs & accessories share the body material
   else if (SCENE_KEYS.has(k)) pending.scene = true;
   else if (!RUNTIME_KEYS.has(k)) pending.parts = true;
   saveHashSoon();
@@ -145,8 +145,8 @@ const rnd = (a, b) => a + Math.random() * (b - a);
 document.getElementById('btn-random').onclick = () => {
   Object.assign(state, {
     shape: pick(Object.keys(SHAPES)), width: rnd(0.85, 1.2), height: rnd(0.85, 1.2), depth: rnd(0.8, 1.15),
-    taper: Math.random() < 0.6 ? 0 : rnd(-0.4, 0.5), lean: Math.random() < 0.7 ? 0 : rnd(-0.6, 0.6), wobble: rnd(0.1, 0.7), seed: (Math.random() * 1000) | 0,
-    color: pick(PALETTE), material: pick(['clay', 'matte', 'glass', 'glass', 'glow', 'plush']), color2: pick(PALETTE),
+    taper: Math.random() < 0.6 ? 0 : rnd(-0.4, 0.5), wobble: rnd(0.1, 0.7), seed: (Math.random() * 1000) | 0,
+    color: pick(PALETTE), material: pick(['matte', 'glass', 'glass', 'glow', 'plush']), color2: pick(PALETTE),
     eyes: pick(['dots', 'dots', 'googly', 'ovals', 'lines', 'pixel']), eyeSize: rnd(0.8, 1.3), eyeSpacing: rnd(0.26, 0.5), faceY: rnd(0.45, 0.66),
     arms: pick(['stubby', 'noodle', 'none']), legs: pick(['stubby', 'thin', 'none', 'stubby']),
     head: pick(['none', 'none', 'beret', 'cap', 'party', 'crown', 'sprout', 'antenna', 'bunny', 'cat', 'bow', 'halo']),

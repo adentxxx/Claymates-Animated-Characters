@@ -13,7 +13,6 @@ const SHAPE_ICONS = {
   heart: '<path d="M20 35C8 27 4 20 6 13 8 7 16 6 20 12c4-6 12-5 14 1 2 7-2 14-14 22Z"/>',
   cloud: '<circle cx="20" cy="20" r="11"/><circle cx="11" cy="26" r="8"/><circle cx="29" cy="26" r="8"/><circle cx="15" cy="13" r="6"/><circle cx="26" cy="12" r="6"/>',
   star: '<path d="m20 5 4.5 9.5 10.3 1.3-7.6 7.1 2 10.2L20 28l-9.2 5.1 2-10.2-7.6-7.1 10.3-1.3Z" stroke-width="3" stroke-linejoin="round"/>',
-  boomerang: '<path d="M8 34 17 21 9 8c-1-2 1-4 3-3l12 11 10 13c2 3 0 5-3 5Z" stroke-width="2" stroke-linejoin="round"/>',
   ghost: '<path d="M8 18a12 12 0 0 1 24 0v16l-4-3-4 3-4-3-4 3-4-3-4 3Z"/>',
 };
 
@@ -24,7 +23,6 @@ export const TABS = [
     { key: 'height', type: 'slider', label: 'Высота', min: 0.6, max: 1.6, step: 0.01, mesh: true },
     { key: 'depth', type: 'slider', label: 'Объём (толщина)', min: 0.45, max: 1.5, step: 0.01, mesh: true },
     { key: 'taper', type: 'slider', label: 'Сужение кверху', min: -0.8, max: 0.9, step: 0.01, mesh: true },
-    { key: 'lean', type: 'slider', label: 'Изгиб', min: -1, max: 1, step: 0.01, mesh: true },
     { key: 'wobble', type: 'slider', label: 'Ручная лепка', min: 0, max: 1.2, step: 0.01, mesh: true },
     { key: 'seed', type: 'button', label: '🎲 Перемешать неровности' },
   ] },
@@ -47,7 +45,6 @@ export const TABS = [
     { key: 'mouthSize', type: 'slider', label: 'Размер рта', min: 0.5, max: 2, step: 0.01, showIf: (s) => s.mouth },
     { key: 'mouthGap', type: 'slider', label: 'Рот ниже / выше', min: 0, max: 1.2, step: 0.01, showIf: (s) => s.mouth },
     { key: 'brows', type: 'choice', label: 'Брови', options: [{ v: 'auto', label: 'По эмоции' }, { v: 'on', label: 'Всегда' }, { v: 'off', label: 'Нет' }] },
-    { key: 'blush', type: 'toggle', label: 'Румянец' },
     { key: 'shine', type: 'toggle', label: 'Блики в глазах' },
   ] },
   { id: 'body', label: 'Руки/ноги', controls: [
