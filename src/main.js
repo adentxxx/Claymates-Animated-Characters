@@ -231,8 +231,6 @@ async function exportVideo() {
   const noPointer = { x: 0, y: 0, active: false };
 
   paused = true;
-  scene.background = null;   // transparent video
-  setExporting(true);        // character centred in the frame
   hero.beginLoop(state, D);
   // warm-up over whole clips so springy parts (ears, antennas) settle into the loop
   const warm = D * Math.max(1, Math.ceil(3 / D));
@@ -242,7 +240,24 @@ async function exportVideo() {
   for (let i = 0, n = Math.round(warm / stepAnim) - 1; i < n; i++) hero.update(stepReal, state, noPointer);
   hero.time = warm - stepAnim; // trims float drift; the first captured frame lands on the loop start
 
-  const stream = canvas.captureStream(0);
+  // Each video frame is drawn centred and transparent, copied into a hidden square canvas,
+  // and then the normal view is drawn again, so the screen never jumps during export.
+  const size = Math.min(canvas.width, canvas.height);
+  const out = document.createElement('canvas');
+  out.width = out.height = size;
+  const octx = out.getContext('2d');
+  const sx = (canvas.width - size) / 2, sy = (canvas.height - size) / 2;
+  const renderFrame = () => {
+    scene.background = null;
+    camera.clearViewOffset();
+    renderer.render(scene, camera);
+    octx.clearRect(0, 0, size, size);
+    octx.drawImage(canvas, sx, sy, size, size, 0, 0, size, size);
+    scene.background = bgTex;
+    applyViewShift();
+    renderer.render(scene, camera);
+  };
+  const stream = out.captureStream(0);
   const track = stream.getVideoTracks()[0];
   const rec = new MediaRecorder(stream, { mimeType: type, videoBitsPerSecond: 10e6 });
   const chunks = [];
@@ -254,7 +269,7 @@ async function exportVideo() {
     for (let k = 0; k < frames; k++) {
       hero.update(stepReal, state, noPointer);
       controls.update();
-      renderer.render(scene, camera);
+      renderFrame();
       track.requestFrame();
       if (k % 10 === 0) toast(`Собираю цикл… ${Math.round((k / frames) * 100)}%`);
       // frames go out at video speed so the encoder timestamps match the clip
@@ -267,7 +282,7 @@ async function exportVideo() {
     track.stop();
     hero.endLoop();
     scene.background = bgTex;
-    setExporting(false);
+    applyViewShift();
     paused = false;
     recording = false;
     exportMenu.setBusy(false);
