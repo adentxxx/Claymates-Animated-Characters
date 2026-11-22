@@ -231,6 +231,15 @@ export function createUI({ state, onChange, onPreset, onRandom }) {
   rnd.title = 'Новый случайный персонаж';
   rnd.onclick = () => { onRandom(); rnd.classList.remove('spin'); void rnd.offsetWidth; rnd.classList.add('spin'); };
   presetsEl.appendChild(rnd);
+  // fade the edge on each side that still has presets hidden behind it
+  const FADE = '40px';
+  const updateFade = () => {
+    const rest = presetsEl.scrollWidth - presetsEl.clientWidth - presetsEl.scrollLeft;
+    presetsEl.style.setProperty('--fl', presetsEl.scrollLeft > 1 ? FADE : '0px');
+    presetsEl.style.setProperty('--fr', rest > 1 ? FADE : '0px');
+  };
+  presetsEl.addEventListener('scroll', updateFade, { passive: true });
+  new ResizeObserver(updateFade).observe(presetsEl);
   PRESETS.forEach((p, i) => {
     const b = h('button', 'preset', `<i style="--c:${p.st.color}"></i><span>${p.name}</span>`);
     b.onclick = () => onPreset(i);
