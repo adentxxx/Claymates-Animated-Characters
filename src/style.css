@@ -234,7 +234,8 @@ body.panel-open #panel { width: var(--panel-w); }
 }
 .chip:hover { background: var(--soft); color: var(--ink); }
 .chip.on { color: var(--ink); font-weight: 700; }
-.chip-off { display: inline-flex; align-items: center; gap: 6px; padding-left: 10px; }
+.chip-off { display: inline-flex; align-items: center; justify-content: center; padding: 0; width: 36px; min-height: 34px; }
+.chip-off svg { position: relative; z-index: 2; }
 .chip-off svg { width: 16px; height: 16px; flex: none; }
 
 .swatches { display: flex; flex-wrap: wrap; gap: 7px; }

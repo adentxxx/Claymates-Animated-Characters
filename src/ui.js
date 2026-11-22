@@ -188,9 +188,10 @@ export function createUI({ state, onChange, onPreset, onRandom }) {
         const opts = [...c.options.filter(isOff), ...c.options.filter((o) => !isOff(o))];
         for (const o of opts) {
           const b = isOff(o)
-            ? h('button', 'chip chip-off', `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M6 6l12 12"/></svg><span>${o.label}</span>`)
+            ? h('button', 'chip chip-off', `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M6 6l12 12"/></svg>`)
             : h('button', 'chip', `<span>${o.label}</span>`);
           b.dataset.v = o.v; b.onclick = () => set(c.key, o.v);
+          if (isOff(o)) { b.title = o.label; b.setAttribute('aria-label', o.label); } // icon only, name kept for hover and screen readers
           row.appendChild(b);
         }
         wrap.appendChild(row);
