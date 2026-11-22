@@ -18,7 +18,7 @@ const svg = (p, sw = 1.9) => `<svg viewBox="0 0 24 24" fill="none" stroke="curre
 const TICK = '<svg class="xp-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 const CHEV = svg('<path d="m6 9 6 6 6-6"/>', 2);
 
-export function createExportMenu(root, items, { onRun }) {
+export function createExportMenu(root, items, { onRun, up = false }) {
   root.classList.add('xp');
   root.innerHTML = `
     <div class="xp-split">
@@ -31,10 +31,10 @@ export function createExportMenu(root, items, { onRun }) {
       <i class="xp-div"></i>
       <button class="xp-more" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Другие способы сохранить">${CHEV}</button>
     </div>
-    <div class="xp-menu" role="menu">
+    <div class="xp-menu${up ? ' up' : ''}" role="menu"><div class="xp-inner">
       <i class="xp-hl"></i>
       ${items.map((it, i) => `<div class="xp-opt" role="menuitemradio" id="xp-o${i}" aria-checked="${i === 0}">${svg(it.icon)}<b>${it.label}</b>${TICK}</div>`).join('')}
-    </div>`;
+    </div></div>`;
   const q = (s) => root.querySelector(s);
   const main = q('.xp-main'), more = q('.xp-more'), menu = q('.xp-menu'), hl = q('.xp-hl'), chev = more.firstElementChild;
   const slots = [...root.querySelectorAll('.xp-slot')];
@@ -71,7 +71,8 @@ export function createExportMenu(root, items, { onRun }) {
     root.classList.toggle('open', o);
     H.t = o ? MH : 0; C.t = o ? 1 : 0; O.t = o ? 1 : 0;
     const n = opts.length;
-    opts.forEach((p, i) => after(o ? 0.05 + i * 0.045 : (n - 1 - i) * 0.02, () => { p.s.t = open ? 1 : 0; }));
+    // rows nearest the button come first (bottom row when the menu opens upwards)
+    opts.forEach((p, i) => { const r = up ? n - 1 - i : i; after(o ? 0.05 + r * 0.045 : (n - 1 - r) * 0.02, () => { p.s.t = open ? 1 : 0; }); });
     if (o) hover(sel, true);
     else { hov = -1; HO.t = 0; more.removeAttribute('aria-activedescendant'); }
     wake();
@@ -127,13 +128,13 @@ export function createExportMenu(root, items, { onRun }) {
       opts.forEach((p) => {
         const s = clamp(p.s.x, 0, 1);
         p.el.style.opacity = s.toFixed(3);
-        p.el.style.transform = `translateY(${((p.s.x - 1) * 14).toFixed(2)}px)`;
+        p.el.style.transform = `translateY(${((p.s.x - 1) * 14 * (up ? -1 : 1)).toFixed(2)}px)`;
         p.tick.style.strokeDashoffset = (22 * (1 - clamp(p.k.x, 0, 1))).toFixed(2);
       });
       hl.style.opacity = (clamp(HO.x, 0, 1) * o).toFixed(3);
       const ht = clamp(Math.min(HT.x, HB.x - 16), PAD, MH - PAD - 16), hb = clamp(HB.x, ht + 16, MH - PAD);
       hl.style.height = (hb - ht).toFixed(2) + 'px';
-      hl.style.transform = `translateY(${ht.toFixed(2)}px)`;
+      hl.style.transform = `translateY(${(ht - PAD).toFixed(2)}px)`; // inside the padded inner box
       const r = R.x, a = slots[front], b = slots[front ^ 1];
       a.style.opacity = clamp(r, 0, 1).toFixed(3);
       a.style.transform = `translateY(${((1 - r) * 18).toFixed(2)}px)`;

@@ -11,8 +11,7 @@
   --inset: 16px;                                   /* same gap on every side of the floating panel */
   --float-edge: 1px solid rgba(20,20,40,.07);      /* shared by the panel and the bottom tab bar */
   --float-shadow: 0 10px 32px rgba(20,20,40,.12);
-  --panel-space: 0px;
-  --xp-w: 240px;                                    /* width of the download split button */                               /* width the panel takes from the right of the stage */
+  --panel-space: 0px;                               /* width the panel takes from the right of the stage */
   color-scheme: light;
 }
 * { box-sizing: border-box; }
@@ -34,7 +33,11 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 }
 #c { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 
-.actions { position: absolute; right: calc(var(--panel-space) + 16px); top: 16px; display: flex; gap: 8px; }
+/* download split button sits right above the Design / Animation tab bar */
+.export-dock {
+  position: absolute; left: calc((100% - var(--panel-space)) / 2); bottom: calc(var(--inset) + 56px + 10px);
+  transform: translateX(-50%); z-index: 4; transition: left .3s cubic-bezier(.2,.8,.2,1);
+}
 /* export split button + spring menu */
 .xp { position: relative; }
 .xp-split {
@@ -59,10 +62,13 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 @keyframes pulse { 50% { opacity: .6; } }
 
 .xp-menu {
-  position: absolute; right: 0; top: 52px; width: 240px; height: 0; padding: 6px; border-radius: 16px; overflow: hidden; z-index: 7;
+  position: absolute; left: calc(50% - 120px); bottom: 52px; width: 240px; height: 0; padding: 6px; border-radius: 16px; overflow: hidden; z-index: 7;
   background: rgba(255,255,255,.96); backdrop-filter: blur(16px); border: var(--float-edge); box-shadow: var(--float-shadow);
-  transform-origin: 100% 0; visibility: hidden; will-change: transform, height, opacity;
+  transform-origin: 50% 100%; visibility: hidden; will-change: transform, height, opacity;
 }
+.xp-inner { position: absolute; left: 6px; right: 6px; top: 6px; }
+/* opening upwards: content sticks to the bottom edge, next to the button */
+.xp-menu.up .xp-inner { top: auto; bottom: 6px; }
 .xp-opt {
   position: relative; z-index: 1; display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 10px 0 12px; border-radius: 10px;
   color: var(--ink); cursor: pointer; opacity: 0; will-change: transform, opacity;
@@ -70,9 +76,9 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 .xp-opt b { flex: 1; }
 .xp-tick { width: 16px !important; height: 16px !important; }
 .xp-tick path { stroke-dasharray: 22; stroke-dashoffset: 22; }
-.xp-hl { position: absolute; left: 6px; right: 6px; top: 0; border-radius: 10px; background: #eceef4; opacity: 0; pointer-events: none; will-change: transform, height; }
+.xp-hl { position: absolute; left: 0; right: 0; top: 0; border-radius: 10px; background: #eceef4; opacity: 0; pointer-events: none; will-change: transform, height; }
 
-.presets-wrap { position: absolute; left: 12px; right: calc(var(--panel-space) + 16px + var(--xp-w) + 8px); top: 16px; height: 44px; display: flex; align-items: center; pointer-events: none; }
+.presets-wrap { position: absolute; left: 12px; right: calc(var(--panel-space) + 16px); top: 16px; height: 44px; display: flex; align-items: center; pointer-events: none; }
 .presets { display: flex; gap: 6px; overflow-x: auto; padding: 4px; max-width: 100%; pointer-events: auto; scrollbar-width: none; }
 .presets::-webkit-scrollbar { display: none; }
 .preset {
@@ -242,6 +248,7 @@ body.panel-open #panel { width: var(--panel-w); }
   #panel { width: 100% !important; height: 0; border-left: 0; border-top: 1px solid var(--line); transition: height .25s; }
   body.panel-open #panel { height: 44vh; }
   .tabs, #controls { min-width: 0; }
-  .presets-wrap { top: 68px; right: 12px; }
+  .presets-wrap { top: 12px; right: 12px; }
+  .export-dock { bottom: calc(12px + 56px + 10px); }
   .stagebar { bottom: 12px; }
 }

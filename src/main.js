@@ -186,7 +186,7 @@ const exportMenu = createExportMenu(document.getElementById('export'), [
   { id: 'png', label: 'Скачать PNG', icon: ICON.png },
   { id: 'video', label: 'Скачать видео', icon: ICON.video },
   { id: 'link', label: 'Скопировать ссылку', icon: ICON.link },
-], { onRun: (id) => ({ png: exportPNG, video: exportVideo, link: copyLink })[id]() });
+], { up: true, onRun: (id) => ({ png: exportPNG, video: exportVideo, link: copyLink })[id]() });
 
 function setExporting(on) {
   exporting = on;
