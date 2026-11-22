@@ -249,6 +249,16 @@ body.panel-open #panel { width: var(--panel-w); }
   body.panel-open #panel { height: 44vh; }
   .tabs, #controls { min-width: 0; }
   .presets-wrap { top: 12px; right: 12px; }
-  .export-dock { bottom: calc(12px + 56px + 10px); }
-  .stagebar { bottom: 12px; }
+  /* tabs pinned left, download button pinned right, on one line; free space between them */
+  .stagebar { left: 12px; bottom: 12px; transform: none; }
+  .export-dock { left: auto; right: 12px; bottom: calc(12px + (56px - 44px) / 2); transform: none; }
+  .xp-menu { left: auto; right: 0; transform-origin: 100% 100%; }
+  .xp-main { padding: 0 10px; }
+  .xp-val { width: 148px; }
+  .xp-slot b { font-size: 12px; }
+}
+/* very narrow phones: the download button keeps only its icon */
+@media (max-width: 370px) {
+  .xp-val { width: 18px; }
+  .xp-slot b { display: none; }
 }
