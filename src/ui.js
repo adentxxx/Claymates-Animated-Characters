@@ -2,6 +2,7 @@ import { SHAPES } from './sdf.js';
 import { MATERIALS } from './materials.js';
 import { EMOTIONS, ANIMS } from './animations.js';
 import { PALETTE, PRESETS } from './presets.js';
+import { createJellySlider } from './jellyslider.js';
 
 const SHAPE_ICONS = {
   ball: '<circle cx="20" cy="21" r="14"/>',
@@ -74,7 +75,7 @@ const TABS = [
 const ANIM_TABS = [
   { id: 'motion', label: 'Анимация', controls: [
     { key: 'anim', type: 'cards', items: ANIMS },
-    { key: 'speed', type: 'slider', label: 'Скорость анимации', min: 0.2, max: 2.5, step: 0.01 },
+    { key: 'speed', type: 'slider', label: 'Скорость анимации', min: 0.2, max: 2.5, step: 0.05, format: (v) => v.toFixed(2).replace(/0$/, '').replace('.', ',') + '×' },
     { key: 'follow', type: 'toggle', label: 'Следить за курсором' },
     { key: 'blink', type: 'toggle', label: 'Моргать' },
   ] },
@@ -156,18 +157,13 @@ export function createUI({ state, onChange, onPreset }) {
         break;
       }
       case 'slider': {
-        const row = h('div', 'slider-row');
-        const inp = h('input'); inp.type = 'range'; inp.min = c.min; inp.max = c.max; inp.step = c.step;
-        const val = h('span', 'val');
-        inp.oninput = () => { val.textContent = (+inp.value).toFixed(2); set(c.key, +inp.value, true); };
-        inp.onchange = () => set(c.key, +inp.value, false);
-        inp.ondblclick = () => { /* reset handled by caller */ };
-        row.append(inp, val); wrap.appendChild(row);
-        refreshFn = () => {
-          if (document.activeElement !== inp) inp.value = state[c.key];
-          val.textContent = (+state[c.key]).toFixed(2);
-          inp.style.setProperty('--p', ((state[c.key] - c.min) / (c.max - c.min)) * 100 + '%');
-        };
+        const js = createJellySlider({
+          label: c.label, min: c.min, max: c.max, step: c.step, value: state[c.key], format: c.format,
+          onInput: (v) => set(c.key, v, true),
+          onChange: (v) => set(c.key, v, false),
+        });
+        wrap.appendChild(js.el);
+        refreshFn = () => js.set(state[c.key]);
         break;
       }
       case 'choice': {

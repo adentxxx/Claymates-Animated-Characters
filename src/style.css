@@ -116,7 +116,7 @@ body.panel-open #panel { width: var(--panel-w); }
 .tab { padding: 8px 11px; border-radius: 10px; font-size: 13px; font-weight: 700; color: var(--muted); }
 .tab:hover { background: var(--soft); color: var(--ink); }
 .tab.on { background: var(--ink); color: #fff; }
-#controls { flex: 1; overflow-y: auto; padding: 8px 18px 40px; min-width: var(--panel-w); }
+#controls { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 8px 18px 40px; min-width: var(--panel-w); }
 
 .ctl { padding: 12px 0; border-bottom: 1px dashed var(--line); }
 .ctl:last-child { border-bottom: 0; }
@@ -132,15 +132,32 @@ body.panel-open #panel { width: var(--panel-w); }
 .shape-btn.on { background: var(--ink); color: #fff; }
 .shape-btn.on svg { fill: #8d8eff; stroke: #8d8eff; }
 
-.slider-row { display: flex; align-items: center; gap: 10px; }
-.slider-row .val { width: 38px; text-align: right; font-size: 12px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
-input[type=range] {
-  --p: 50%;
-  flex: 1; -webkit-appearance: none; appearance: none; height: 6px; border-radius: 6px; outline: none;
-  background: linear-gradient(90deg, var(--ink) var(--p), #e3e4ec var(--p));
+/* jelly slider: thumb and value drop fuse into one liquid shape */
+.jelly { position: relative; }
+.jelly-rail { position: relative; height: 32px; touch-action: none; cursor: pointer; }
+.jelly-track { position: absolute; left: 0; right: 0; top: 13px; height: 6px; border-radius: 999px; background: #e3e4ec; overflow: hidden; }
+.jelly-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--ink); border-radius: 999px; }
+.jelly-goo { position: absolute; left: -40px; right: -40px; top: -80px; height: 140px; filter: url(#jelly-goo); pointer-events: none; }
+.jelly-blob { position: absolute; left: 0; top: 0; background: var(--ink); border-radius: 50%; will-change: transform; }
+.jelly-drop { width: 36px; height: 36px; }
+.jelly-thumb { width: 28px; height: 28px; } /* reads as 24: the goo filter trims its edge */
+.jelly-label {
+  position: absolute; left: 0; top: 0; width: 36px; height: 36px; display: grid; place-items: center;
+  font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.02em; color: #fff;
+  pointer-events: none; opacity: 0; will-change: transform, opacity;
 }
-input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 2px solid var(--ink); box-shadow: 0 2px 6px rgba(0,0,0,.15); cursor: grab; }
-input[type=range]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 2px solid var(--ink); cursor: grab; }
+.jelly-hit { position: absolute; top: 4px; width: 24px; height: 24px; border-radius: 50%; outline: none; }
+.jelly-hit:focus-visible { box-shadow: 0 0 0 3px rgba(91,92,240,.35); }
+/* scale under the track, no numbers */
+.jelly-marks { position: relative; height: 8px; margin-top: 6px; }
+.jelly-marks i {
+  position: absolute; top: 0; left: calc(12px + (100% - 24px) * var(--p, 0));
+  width: 1.5px; height: 4px; margin-left: -.75px; border-radius: 1px;
+  background: #e3e4ec; transition: background .2s ease, height .25s cubic-bezier(.3,1.5,.5,1);
+}
+.jelly-marks i.major { height: 8px; background: #c4c6d6; }
+.jelly-marks i.on { background: var(--muted); }
+.jelly-marks i.major.on { background: var(--ink); }
 
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { padding: 8px 12px; border-radius: 10px; background: var(--soft); font-size: 13px; font-weight: 700; transition: .15s; }

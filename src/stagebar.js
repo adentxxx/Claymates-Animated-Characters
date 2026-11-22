@@ -1,3 +1,5 @@
+import { S, tune, step, clamp } from './motion.js';
+
 // Stage switcher: a small icon tab bar at the bottom centre with one morphing tooltip.
 // Ported from the "Morph tooltip" motion component (designbookmark.com/motion).
 // The tooltip never hides between tabs: the edge facing the new tab rides a stiff
@@ -14,11 +16,6 @@ const SPRING = {
 };
 const BW = 52, GAP = 4, PAD = 6;
 
-const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const S = (x, [k, c]) => ({ x, v: 0, t: x, k, c: reduce ? 2 * Math.sqrt(k) : c });
-const tune = (s, [k, c]) => { s.k = k; s.c = reduce ? 2 * Math.sqrt(k) : c; };
-const step = (s, dt) => { const a = -s.k * (s.x - s.t) - s.c * s.v; s.v += a * dt; s.x += s.v * dt; };
-const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
 const ICONS = {
   // palette
