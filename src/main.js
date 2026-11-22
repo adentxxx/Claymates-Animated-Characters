@@ -21,7 +21,7 @@ function loadFromHash() {
   } catch { /* ignore broken links */ }
   return null;
 }
-const state = loadFromHash() || presetState(3);
+const state = loadFromHash() || presetState(0); // opens with the first preset (Кубик)
 state.material = normalizeMaterial(state.material);
 
 /* ---------------- renderer & scene ---------------- */
