@@ -378,7 +378,10 @@ export class Character {
     };
     const GOLD = accM('#ffc53d'), LEAF = accM('#5ccc4a'), LENS = accM('#24242c');
     const A = accM(st.accColor);
-    A.side = THREE.DoubleSide;
+    // double-sided transmissive (glass/glow) parts get drawn into the refraction buffer and
+    // show up mirrored on the body, so they stay single-sided
+    const twoSided = (m) => { if (!(m.transmission > 0)) m.side = THREE.DoubleSide; return m; };
+    twoSided(A);
     const G = accM(st.glassColor);
     const S = this.surf, box = this.box, k = st.accSize, L = this.L, fm = this.fm;
     const top = S.top(0) || { p: new V3(0, box.max.y, 0), n: Y.clone() };
@@ -413,7 +416,7 @@ export class Character {
       }
       case 'crown': {
         const g = new THREE.Group();
-        const gold = GOLD; gold.side = THREE.DoubleSide;
+        const gold = twoSided(GOLD);
         const band = mesh(new THREE.CylinderGeometry(R * 0.72, R * 0.78, R * 0.42, 48, 1, true), gold); band.position.y = R * 0.08;
         g.add(band);
         for (let i = 0; i < 5; i++) {
