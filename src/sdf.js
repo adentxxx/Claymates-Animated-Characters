@@ -26,6 +26,7 @@ export function noise3(x, y, z, s = 0) {
 }
 
 /* ---------------- primitives ---------------- */
+const smax = (a, b, k) => { const h = max(k - abs(a - b), 0) / k; return max(a, b) + h * h * k * 0.25; };
 const smin = (a, b, k) => { const h = max(k - abs(a - b), 0) / k; return min(a, b) - h * h * k * 0.25; };
 const sph = (x, y, z, cx, cy, cz, r) => sqrt((x - cx) ** 2 + (y - cy) ** 2 + (z - cz) ** 2) - r;
 
@@ -111,14 +112,22 @@ function thicknessMap(key, f2) {
 }
 function inflate(key, f2, x, y, z, h0, infl, rr) {
   const d2 = f2(x, y);
-  const inner = d2 < 0.1 ? thicknessMap(key, f2)(x, y) : 0;
-  const h = h0 + infl * sqrt(inner);
+  // always sample the blurred map (it fades out smoothly past the outline) and use a
+  // softened sqrt, so thickness has no step or infinite slope near the rim
+  const inner = thicknessMap(key, f2)(x, y);
+  const h = h0 + infl * (sqrt(inner + 0.012) - 0.1095);
   const wx = d2, wy = abs(z) - h;
   return min(max(wx, wy), 0) + sqrt(max(wx, 0) ** 2 + max(wy, 0) ** 2) - rr;
 }
 
 const tri2b = (x, y) => tri2(x, y - 0.8, 0.9);
-const star2b = (x, y) => star2(x, y - 0.95, 0.88, 0.5);
+// averaging the 2D distance around a small ring also rounds the concave corners between the rays
+const STAR_RING = Array.from({ length: 8 }, (_, i) => [Math.cos(i * Math.PI / 4) * 0.09, Math.sin(i * Math.PI / 4) * 0.09]);
+const star2b = (x, y) => {
+  let d = star2(x, y - 0.95, 0.88, 0.5) * 2;
+  for (const [ox, oy] of STAR_RING) d += star2(x + ox, y - 0.95 + oy, 0.88, 0.5);
+  return d / 10;
+};
 
 /* ---------------- shape catalogue ---------------- */
 export const SHAPES = {
@@ -144,7 +153,7 @@ export const SHAPES = {
     let d = capsule(x, y, z, 0, 0.75, 0, 0, 1.25, 0, 0.72);
     // wavy hem
     const hem = 0.25 + 0.07 * Math.cos(x * 9);
-    d = max(d, -(y - hem));
+    d = smax(d, -(y - hem), 0.12);
     return d - 0.02;
   } },
 };
