@@ -165,7 +165,7 @@ export function createUI({ state, onChange, onPreset, onRandom }) {
           b.dataset.v = k; grid.appendChild(b);
         }
         wrap.appendChild(grid);
-        const pill = createMorphPill(grid, 'morph-pill');
+        const pill = createMorphPill(grid, 'morph-pill morph-pill--outline');
         refreshFn = () => grid.querySelectorAll('.shape-btn').forEach((b) => {
           const on = b.dataset.v === state.shape; b.classList.toggle('on', on); if (on) pill.moveTo(b);
         });
@@ -189,7 +189,7 @@ export function createUI({ state, onChange, onPreset, onRandom }) {
           row.appendChild(b);
         }
         wrap.appendChild(row);
-        const pill = createMorphPill(row, 'morph-pill');
+        const pill = createMorphPill(row, 'morph-pill morph-pill--outline');
         refreshFn = () => row.querySelectorAll('.chip').forEach((b) => {
           const on = b.dataset.v === state[c.key]; b.classList.toggle('on', on); if (on) pill.moveTo(b);
         });
@@ -225,7 +225,7 @@ export function createUI({ state, onChange, onPreset, onRandom }) {
           grid.appendChild(b);
         }
         wrap.appendChild(grid);
-        const pill = createMorphPill(grid, 'morph-pill');
+        const pill = createMorphPill(grid, 'morph-pill morph-pill--outline');
         refreshFn = () => grid.querySelectorAll('.card').forEach((b) => {
           const on = b.dataset.v === state[c.key]; b.classList.toggle('on', on); if (on) pill.moveTo(b);
         });

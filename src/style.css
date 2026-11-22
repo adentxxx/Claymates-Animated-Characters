@@ -161,13 +161,14 @@ body.panel-open #panel { width: var(--panel-w); }
 .tab:hover { background: var(--soft); color: var(--ink); }
 .tab.on, .tab.on:hover { background: none; color: #fff; }
 /* the dark pill that morphs between selected items: tabs, chips, shape grid, cards */
+/* ---------- selection pill: two styles ----------
+   primary  (filled):   dark pill, white label — main navigation (panel tabs)
+   secondary (outlined): dark ring, label stays dark — options inside a tab
+   Both morph between items on the same springs (src/morphpill.js). */
 .morph-pill { position: absolute; left: 0; top: 0; z-index: 0; border-radius: 10px; background: var(--ink); pointer-events: none; will-change: transform, width, height; }
-.shape-grid > .morph-pill { border-radius: 12px; }
+.morph-pill--outline { z-index: 3; background: transparent; box-shadow: inset 0 0 0 1.5px var(--ink); }
+.shape-grid > .morph-pill { border-radius: 14px; }
 .card-grid > .morph-pill { border-radius: 14px; }
-/* in chips and grids the pill sits above the items' light backgrounds but below their content,
-   so the whole stretch stays visible as it crosses neighbouring items */
-.chips > .morph-pill, .shape-grid > .morph-pill, .card-grid > .morph-pill { z-index: 1; }
-.chip > *, .shape-btn > *, .card > * { position: relative; z-index: 2; }
 /* tab content slides in from the side the pill moves to */
 .pane-in { animation: pane-in .34s cubic-bezier(.2,.8,.2,1); }
 @keyframes pane-in { from { opacity: 0; transform: translateX(var(--dx, 0)); } }
@@ -199,11 +200,15 @@ body.panel-open #panel { width: var(--panel-w); }
 .ctl-toggle .lbl { margin: 0; color: var(--ink); font-size: 13.5px; }
 
 .shape-grid { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-.shape-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 2px 8px; border-radius: 12px; background: var(--soft); font-size: 11px; font-weight: 700; transition: .15s; }
-.shape-btn svg { width: 34px; height: 34px; fill: #b9bbd0; stroke: #b9bbd0; transition: .15s; }
-.shape-btn:hover svg { fill: var(--accent); stroke: var(--accent); }
-.shape-btn.on { background: transparent; color: #fff; }
-.shape-btn.on svg { fill: #8d8eff; stroke: #8d8eff; }
+.shape-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 2px 9px; border-radius: 14px;
+  font-size: 11.5px; font-weight: 600; color: var(--muted); transition: background .15s, box-shadow .15s, color .15s;
+}
+.shape-btn svg { width: 34px; height: 34px; fill: #8f90f5; stroke: #8f90f5; transition: transform .2s cubic-bezier(.3,1.5,.5,1); }
+.shape-btn:hover { background: var(--soft); box-shadow: inset 0 0 0 1px #e3e4ec; color: var(--ink); }
+.shape-btn:hover svg { transform: scale(1.06); }
+.shape-btn.on { color: var(--ink); }
+.shape-btn.on svg { fill: var(--accent); stroke: var(--accent); }
 
 /* jelly slider: thumb and value drop fuse into one liquid shape */
 .jelly { position: relative; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
@@ -223,9 +228,12 @@ body.panel-open #panel { width: var(--panel-w); }
 .jelly-hit:focus-visible { box-shadow: 0 0 0 3px rgba(91,92,240,.35); }
 
 .chips { position: relative; display: flex; flex-wrap: wrap; gap: 6px; }
-.chip { padding: 8px 12px; border-radius: 10px; background: var(--soft); font-size: 13px; font-weight: 700; transition: .15s; }
-.chip:hover { background: #e9eaf3; }
-.chip.on, .chip.on:hover { background: transparent; color: #fff; }
+.chip {
+  padding: 8px 12px; border-radius: 10px; font-size: 13px; font-weight: 600; color: var(--muted);
+  box-shadow: inset 0 0 0 1px #e3e4ec; transition: background .15s, color .15s;
+}
+.chip:hover { background: var(--soft); color: var(--ink); }
+.chip.on { color: var(--ink); font-weight: 700; }
 
 .swatches { display: flex; flex-wrap: wrap; gap: 7px; }
 .sw { width: 28px; height: 28px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0,0,0,.1); position: relative; transition: transform .15s; }
@@ -253,11 +261,12 @@ body.panel-open #panel { width: var(--panel-w); }
 .card-grid { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .card {
   display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 4px 10px; border-radius: 14px;
-  background: var(--soft); font-size: 12px; font-weight: 700; transition: background .15s, transform .15s;
+  font-size: 12px; font-weight: 600; color: var(--muted); transition: background .15s, box-shadow .15s, color .15s;
 }
-.card b { font-size: 24px; line-height: 1; }
-.card:hover { background: #e9eaf3; }
-.card.on, .card.on:hover { background: transparent; color: #fff; }
+.card b { font-size: 24px; line-height: 1; transition: transform .2s cubic-bezier(.3,1.5,.5,1); }
+.card:hover { background: var(--soft); box-shadow: inset 0 0 0 1px #e3e4ec; color: var(--ink); }
+.card:hover b { transform: scale(1.08); }
+.card.on { color: var(--ink); }
 
 /* ---------- small screens ---------- */
 @media (max-width: 860px) {
