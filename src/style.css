@@ -33,38 +33,15 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 }
 #c { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 
-/* download split button sits right above the Design / Animation tab bar */
-.export-dock {
-  position: absolute; left: calc((100% - var(--panel-space)) / 2); bottom: calc(var(--inset) + 56px + 10px);
-  transform: translateX(-50%); z-index: 4; transition: left .3s cubic-bezier(.2,.8,.2,1);
-}
-/* export split button + spring menu */
-.xp { position: relative; }
-.xp-split {
-  display: flex; align-items: center; height: 56px; padding: 6px; border-radius: 18px; /* same size as the tab bar */
-  background: var(--ink); color: #fff; box-shadow: var(--float-shadow);
-}
-.xp-main, .xp-more {
-  height: 44px; border-radius: 12px; display: flex; align-items: center; color: #fff;
-  transition: background .15s; -webkit-tap-highlight-color: transparent;
-}
-.xp-main { padding: 0 12px; will-change: transform; }
-.xp-main:hover, .xp-more:hover, .xp.open .xp-more { background: rgba(255,255,255,.12); }
-.xp-main:focus-visible, .xp-more:focus-visible { outline: 2px solid #8d8eff; outline-offset: -2px; }
-.xp-val { position: relative; width: 164px; height: 44px; overflow: hidden; }
-.xp-slot { position: absolute; inset: 0; display: flex; align-items: center; gap: 8px; will-change: transform, opacity; }
-.xp-slot b, .xp-opt b { font-size: 13px; font-weight: 700; letter-spacing: -.01em; white-space: nowrap; }
+/* action menu that opens from the download icon in the stage tab bar */
+.xp { position: absolute; right: 0; bottom: 0; }
 .xp svg { flex: none; width: 18px; height: 18px; }
-.xp-div { width: 1px; height: 20px; margin: 0 2px; background: rgba(255,255,255,.18); }
-.xp-more { width: 44px; justify-content: center; color: rgba(255,255,255,.72); }
-.xp-more svg { will-change: transform; }
-.xp.busy .xp-main { color: #ff8a95; animation: pulse 1s infinite; cursor: default; }
-@keyframes pulse { 50% { opacity: .6; } }
+.xp-opt b { font-size: 13px; font-weight: 700; letter-spacing: -.01em; white-space: nowrap; }
 
 .xp-menu {
-  position: absolute; left: calc(50% - 120px); bottom: 64px; width: 240px; height: 0; padding: 6px; border-radius: 16px; overflow: hidden; z-index: 7;
+  position: absolute; right: 0; bottom: 64px; width: 240px; height: 0; padding: 6px; border-radius: 16px; overflow: hidden; z-index: 7;
   background: rgba(255,255,255,.96); backdrop-filter: blur(16px); border: var(--float-edge); box-shadow: var(--float-shadow);
-  transform-origin: 50% 100%; visibility: hidden; will-change: transform, height, opacity;
+  transform-origin: 100% 100%; visibility: hidden; will-change: transform, height, opacity;
 }
 .xp-inner { position: absolute; left: 6px; right: 6px; top: 6px; }
 /* opening upwards: content sticks to the bottom edge, next to the button */
@@ -74,8 +51,6 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
   color: var(--ink); cursor: pointer; opacity: 0; will-change: transform, opacity;
 }
 .xp-opt b { flex: 1; }
-.xp-tick { width: 16px !important; height: 16px !important; }
-.xp-tick path { stroke-dasharray: 22; stroke-dashoffset: 22; }
 .xp-hl { position: absolute; left: 0; right: 0; top: 0; border-radius: 10px; background: #eceef4; opacity: 0; pointer-events: none; will-change: transform, height; }
 
 .presets-wrap { position: absolute; left: 12px; right: calc(var(--panel-space) + 16px); top: 16px; height: 44px; display: flex; align-items: center; pointer-events: none; }
@@ -102,12 +77,19 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 .preset i { width: 22px; height: 22px; border-radius: 50%; background: var(--c); box-shadow: inset -3px -4px 6px rgba(0,0,0,.18), inset 3px 3px 5px rgba(255,255,255,.4); }
 
 /* ---------- stage bar (morph tooltip) ---------- */
+.stage-dock {
+  position: absolute; left: calc((100% - var(--panel-space)) / 2); bottom: var(--inset); transform: translateX(-50%); z-index: 5;
+  transition: left .3s cubic-bezier(.2,.8,.2,1);
+}
 .stagebar {
   --sb-surface: rgba(255,255,255,.9);
   --sb-fill: #eceef4;
-  position: absolute; left: calc((100% - var(--panel-space)) / 2); bottom: var(--inset); height: 56px; transform: translateX(-50%); z-index: 5;
-  transition: left .3s cubic-bezier(.2,.8,.2,1);
+  position: relative; height: 56px;
 }
+.sb-sep { flex: none; width: 1px; height: 24px; margin: 0 4px; align-self: center; background: var(--line); }
+.sb-action.open { color: var(--ink); }
+.sb-action.busy { color: #ff4757; animation: pulse 1s infinite; }
+@keyframes pulse { 50% { opacity: .6; } }
 .sb-bar {
   position: absolute; inset: 0; display: flex; gap: 4px; padding: 6px; border-radius: 18px;
   background: var(--sb-surface); backdrop-filter: blur(14px); border: var(--float-edge); box-shadow: var(--float-shadow);
@@ -279,17 +261,5 @@ body.panel-open #panel { width: var(--panel-w); }
   body.panel-open #panel { height: 44vh; }
   .tabs, #controls { min-width: 0; }
   .presets-wrap { top: 12px; right: 12px; }
-  /* tabs pinned left, download button pinned right, on one line; free space between them */
-  .stagebar { left: 12px; bottom: 12px; transform: none; }
-  .export-dock { left: auto; right: 12px; bottom: 12px; transform: none; }
-  .xp-menu { left: auto; right: 0; transform-origin: 100% 100%; }
-  .xp-main { padding: 0 8px; }
-  .xp-more { width: 38px; }
-  .xp-val { width: 148px; }
-  .xp-slot b { font-size: 12px; }
-}
-/* very narrow phones: the download button keeps only its icon */
-@media (max-width: 370px) {
-  .xp-val { width: 18px; }
-  .xp-slot b { display: none; }
+  .stage-dock { bottom: 12px; } /* centred */
 }

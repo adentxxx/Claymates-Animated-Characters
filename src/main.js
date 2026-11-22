@@ -4,7 +4,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { Character } from './character.js';
 import { createUI, STAGES } from './ui.js';
 import { createStageBar } from './stagebar.js';
-import { createExportMenu } from './exportmenu.js';
+import { createActionMenu } from './exportmenu.js';
 import { DEFAULTS, PRESETS, PALETTE, presetState } from './presets.js';
 import { SHAPES } from './sdf.js';
 import { normalizeMaterial } from './materials.js';
@@ -129,6 +129,7 @@ const stageItems = STAGES.map((st, i) => ({ id: st.id, title: st.title, key: Str
 const stageBar = createStageBar(document.getElementById('stagebar'), stageItems, {
   initial: ui.stage,
   onSelect: (id) => ui.setStage(id),
+  action: { id: 'download', title: 'Скачать', onClick: () => {} }, // opens the action menu below
 });
 window.addEventListener('keydown', (e) => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -176,17 +177,18 @@ function randomize() {
   hero.clearParticles(); rebuildAll(); ui.refresh(); saveHashSoon();
 }
 
-/* exports: one split button — main action + spring menu */
+/* exports: download icon in the stage tab bar + spring menu */
 const ICON = {
   png: '<path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5"/><path d="M5 19h14"/>',
   video: '<rect x="3" y="6" width="13" height="12" rx="3"/><path d="m16 10 5-3v10l-5-3"/>',
   link: '<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/>',
 };
-const exportMenu = createExportMenu(document.getElementById('export'), [
+// the download icon in the stage tab bar opens this menu
+const exportMenu = createActionMenu(document.getElementById('export-menu'), [
   { id: 'png', label: 'Скачать PNG', icon: ICON.png },
   { id: 'video', label: 'Скачать видео', icon: ICON.video },
   { id: 'link', label: 'Скопировать ссылку', icon: ICON.link },
-], { up: true, onRun: (id) => ({ png: exportPNG, video: exportVideo, link: copyLink })[id]() });
+], { trigger: stageBar.actionEl, up: true, onRun: (id) => ({ png: exportPNG, video: exportVideo, link: copyLink })[id]() });
 
 function setExporting(on) {
   exporting = on;

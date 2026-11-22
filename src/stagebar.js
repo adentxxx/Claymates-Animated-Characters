@@ -14,7 +14,7 @@ const SPRING = {
   fade: [420, 32],   // label cross-fade
   pop: [520, 16],    // icon pop on select
 };
-const BW = 52, GAP = 4, PAD = 6;
+const BW = 52, GAP = 4, PAD = 6, SEP = 9; // SEP: divider before the action button (1px + 4px margins)
 
 
 const ICONS = {
@@ -22,24 +22,32 @@ const ICONS = {
   design: '<path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>',
   // play inside motion lines
   anim: '<path d="M9 7.5v9l7-4.5z"/><path d="M3.5 9a9 9 0 0 1 2.2-3.6M3.5 15a9 9 0 0 0 2.2 3.6M20.5 9a9 9 0 0 0-2.2-3.6M20.5 15a9 9 0 0 1-2.2 3.6"/>',
+  // arrow into tray
+  download: '<path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5"/><path d="M5 19h14"/>',
 };
 const svg = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
 
-export function createStageBar(root, items, { initial, onSelect }) {
-  const W = PAD * 2 + items.length * BW + (items.length - 1) * GAP;
+// `action` (optional): one extra button after a divider, e.g. { id: 'download', title: 'Скачать', onClick(el) }.
+// It shares the hover highlight and the morphing tooltip but is not a tab.
+export function createStageBar(root, items, { initial, onSelect, action = null }) {
+  const n = items.length;
+  const W = PAD * 2 + n * BW + (n - 1) * GAP + (action ? 2 * GAP + SEP + BW : 0);
   root.style.width = W + 'px';
+  const all = action ? [...items, action] : items;
   root.innerHTML = `
     <i class="sb-tail"></i>
-    <div class="sb-tip" role="tooltip">${items.map((it) => `<span class="sb-lab">${it.title}<kbd>${it.key}</kbd></span>`).join('')}</div>
+    <div class="sb-tip" role="tooltip">${all.map((it) => `<span class="sb-lab">${it.title}${it.key ? `<kbd>${it.key}</kbd>` : ''}</span>`).join('')}</div>
     <div class="sb-bar" role="tablist" aria-label="Этапы настройки">
       <i class="sb-hl"></i>
       ${items.map((it) => `<button class="sb-tool" role="tab" aria-label="${it.title}, клавиша ${it.key}">${svg(ICONS[it.id])}</button>`).join('')}
+      ${action ? `<i class="sb-sep"></i><button class="sb-tool sb-action" aria-haspopup="menu" aria-expanded="false" aria-label="${action.title}">${svg(ICONS[action.id])}</button>` : ''}
     </div>`;
   const q = (sel) => root.querySelector(sel);
   const tip = q('.sb-tip'), tail = q('.sb-tail'), hl = q('.sb-hl'), bar = q('.sb-bar');
-  const tools = [...root.querySelectorAll('.sb-tool')].map((el) => ({ el, ic: el.firstElementChild, p: S(1, SPRING.pop) }));
+  const tools = [...root.querySelectorAll('.sb-tool:not(.sb-action)')].map((el) => ({ el, ic: el.firstElementChild, p: S(1, SPRING.pop) }));
+  const actionBtn = action ? { el: q('.sb-action'), ic: q('.sb-action').firstElementChild, p: S(1, SPRING.pop) } : null;
   const labs = [...root.querySelectorAll('.sb-lab')].map((el) => ({ el, o: S(0, SPRING.fade), dir: 0, w: 96 }));
-  const cx = (i) => PAD + i * (BW + GAP) + BW / 2;
+  const cx = (i) => (i < n ? PAD + i * (BW + GAP) : PAD + n * (BW + GAP) + SEP + GAP) + BW / 2;
 
   const TL = S(0, SPRING.lead), TR = S(0, SPRING.lead), TX = S(0, SPRING.tail); // tooltip edges, tail centre
   const HL = S(0, SPRING.lead), HR = S(0, SPRING.lead);                         // hover highlight edges
@@ -98,6 +106,12 @@ export function createStageBar(root, items, { initial, onSelect }) {
     t.el.addEventListener('blur', () => leave());
     t.el.addEventListener('click', () => { point(i); select(i); });
   });
+  if (actionBtn) {
+    actionBtn.el.addEventListener('pointerenter', () => point(n));
+    actionBtn.el.addEventListener('focus', () => point(n));
+    actionBtn.el.addEventListener('blur', () => leave());
+    actionBtn.el.addEventListener('click', () => { actionBtn.p.x = 0.78; leave(0); action.onClick(actionBtn.el); });
+  }
   bar.addEventListener('pointerleave', () => leave());
   bar.addEventListener('keydown', (e) => {
     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
@@ -116,6 +130,7 @@ export function createStageBar(root, items, { initial, onSelect }) {
       [TL, TR, TX, HL, HR, A].forEach((s) => step(s, h));
       labs.forEach((l) => step(l.o, h));
       tools.forEach((t) => step(t.p, h));
+      if (actionBtn) step(actionBtn.p, h);
     }
     render();
     requestAnimationFrame(loop);
@@ -140,10 +155,12 @@ export function createStageBar(root, items, { initial, onSelect }) {
       lb.el.style.filter = o > 0.02 && o < 0.98 ? `blur(${((1 - o) * 3).toFixed(2)}px)` : 'none';
     });
     tools.forEach((t) => { t.ic.style.transform = `scale(${t.p.x.toFixed(4)})`; });
+    if (actionBtn) actionBtn.ic.style.transform = `scale(${actionBtn.p.x.toFixed(4)})`;
   }
   requestAnimationFrame(loop);
 
   return {
+    actionEl: actionBtn ? actionBtn.el : null,
     // switch from outside (keyboard shortcut): flash the tooltip over the new tab
     select(id) {
       const i = items.findIndex((it) => it.id === id);
