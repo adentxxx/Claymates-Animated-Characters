@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Claymates — пластилиновые 3D-персонажи</title>
+  <meta name="description" content="Конструктор объёмных пластилиновых 3D-персонажей: форма, эмоции, аксессуары и готовые анимации." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><path fill='%235b5cf0' d='M20 4C25 11 33 17 33 25a13 13 0 0 1-26 0C7 17 15 11 20 4Z'/><circle cx='16' cy='25' r='2.4'/><circle cx='24' cy='25' r='2.4'/></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Unbounded:wght@600;800&display=swap" rel="stylesheet" />
+</head>
+<body class="panel-open">
+  <div id="app">
+    <main id="stage">
+      <canvas id="c"></canvas>
+
+      <header class="brand">
+        <div class="logo"><svg viewBox="0 0 40 40"><path d="M20 4C25 11 33 17 33 25a13 13 0 0 1-26 0C7 17 15 11 20 4Z"/><circle cx="16" cy="25" r="2.4" fill="#fff"/><circle cx="24" cy="25" r="2.4" fill="#fff"/></svg></div>
+        <div>
+          <h1>Claymates</h1>
+          <p>пластилиновые 3D-персонажи</p>
+        </div>
+      </header>
+
+      <div class="actions">
+        <button id="btn-random" class="act" title="Случайный персонаж">🎲 <span>Случайный</span></button>
+        <button id="btn-png" class="act" title="Сохранить PNG с прозрачным фоном">🖼 <span>PNG</span></button>
+        <button id="btn-video" class="act" title="Записать 4 секунды анимации">🎬 <span>Видео</span></button>
+        <button id="btn-link" class="act" title="Скопировать ссылку на персонажа">🔗 <span>Ссылка</span></button>
+        <button id="btn-panel" class="act icon" title="Панель настроек">⚙︎</button>
+      </div>
+
+      <div class="presets-wrap"><div class="presets" id="presets"></div></div>
+
+      <div class="dock">
+        <div class="dock-label">Эмоция</div>
+        <div class="dock-row" id="emotions"></div>
+        <div class="dock-label">Анимация</div>
+        <div class="dock-row" id="anims"></div>
+      </div>
+      <div id="toast"></div>
+    </main>
+
+    <aside id="panel">
+      <nav class="tabs" id="tabs"></nav>
+      <div id="controls"></div>
+    </aside>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
