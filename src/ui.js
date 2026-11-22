@@ -3,6 +3,7 @@ import { MATERIALS } from './materials.js';
 import { EMOTIONS, ANIMS } from './animations.js';
 import { PALETTE, PRESETS } from './presets.js';
 import { createJellySlider } from './jellyslider.js';
+import { S, tune, step, settled, register } from './motion.js';
 
 const SHAPE_ICONS = {
   ball: '<circle cx="20" cy="21" r="14"/>',
@@ -110,10 +111,55 @@ export function createUI({ state, onChange, onPreset, onRandom }) {
       for (const c of tab.controls) pane.appendChild(control(c));
     }
   }
-  function select(id) {
+  /* morphing pill under the active tab — same springs as the stage tab bar:
+     the edge facing the move is stiff, the other one lags, so the pill stretches across */
+  const LEAD = [620, 36], TRAIL = [190, 19];
+  const pill = h('i', 'tab-pill');
+  tabsEl.prepend(pill);
+  const PL = S(0, LEAD), PR = S(0, LEAD), PT = S(0, LEAD), PO = S(0, [420, 32]);
+  let pillAwake = true, curTab = null;
+  function placePill(snap) {
+    const b = tabBtns[curTab];
+    if (!b || b.hidden || tabsEl.hidden) { PO.t = 0; pillAwake = true; return; }
+    const x = b.offsetLeft, w = b.offsetWidth, y = b.offsetTop;
+    if (snap) { PL.x = PL.t = x; PR.x = PR.t = x + w; PT.x = PT.t = y; PL.v = PR.v = PT.v = 0; }
+    else {
+      const right = x > PL.t || (x === PL.t && y > PT.t);
+      tune(PR, right ? LEAD : TRAIL); tune(PL, right ? TRAIL : LEAD); tune(PT, LEAD);
+      PL.t = x; PR.t = x + w; PT.t = y;
+    }
+    pill.style.height = b.offsetHeight + 'px';
+    PO.t = 1; if (snap) PO.x = 1;
+    pillAwake = true;
+  }
+  register({
+    sleeping: () => !pillAwake,
+    frame(dt) { [PL, PR, PT, PO].forEach((s) => step(s, dt)); },
+    render() {
+      const l = Math.min(PL.x, PR.x - 20);
+      pill.style.width = (PR.x - l).toFixed(2) + 'px';
+      pill.style.transform = `translate(${l.toFixed(2)}px, ${PT.x.toFixed(2)}px)`;
+      pill.style.opacity = Math.max(0, Math.min(1, PO.x)).toFixed(3);
+      if ([PL, PR, PT, PO].every((s) => settled(s, 0.01))) pillAwake = false;
+    },
+  });
+  new ResizeObserver(() => placePill(true)).observe(tabsEl);
+
+  function select(id, snap = false) {
+    const prev = curTab;
     lastTab[stage.id] = id;
     store('claymates.tab.' + stage.id, id);
+    curTab = id;
+    // content slides in from the side the pill is moving to
+    const order = stage.tabs.map((t) => t.id);
+    const dir = prev && !snap && order.includes(prev) ? Math.sign(order.indexOf(id) - order.indexOf(prev)) : 0;
     for (const k in tabBtns) { tabBtns[k].classList.toggle('on', k === id); panes[k].hidden = k !== id; }
+    if (dir) {
+      const pane = panes[id];
+      pane.style.setProperty('--dx', dir * 18 + 'px');
+      pane.classList.remove('pane-in'); void pane.offsetWidth; pane.classList.add('pane-in');
+    }
+    placePill(snap || !prev);
   }
   function setStage(id) {
     stage = STAGES.find((s) => s.id === id) || STAGES[0];
@@ -122,7 +168,7 @@ export function createUI({ state, onChange, onPreset, onRandom }) {
     for (const k in tabBtns) tabBtns[k].hidden = tabBtns[k].dataset.stage !== stage.id;
     tabsEl.hidden = stage.tabs.length < 2;
     const tab = stage.tabs.some((t) => t.id === lastTab[stage.id]) ? lastTab[stage.id] : stage.tabs[0].id;
-    select(tab);
+    select(tab, true);
     ctrlEl.scrollTop = 0;
     ctrlEl.classList.remove('enter'); void ctrlEl.offsetWidth; ctrlEl.classList.add('enter');
   }
