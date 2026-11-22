@@ -4,6 +4,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { Character } from './character.js';
 import { createUI, STAGES } from './ui.js';
 import { createStageBar } from './stagebar.js';
+import { createExportMenu } from './exportmenu.js';
 import { DEFAULTS, PRESETS, PALETTE, presetState } from './presets.js';
 import { SHAPES } from './sdf.js';
 import { normalizeMaterial } from './materials.js';
@@ -119,6 +120,7 @@ function frameCharacter() {
 const ui = createUI({
   state,
   onChange,
+  onRandom: () => randomize(),
   onPreset: (i) => { Object.assign(state, presetState(i)); hero.clearParticles(); rebuildAll(); ui.refresh(); saveHashSoon(); },
 });
 
@@ -159,7 +161,7 @@ function toast(msg) {
 /* random character */
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 const rnd = (a, b) => a + Math.random() * (b - a);
-document.getElementById('btn-random').onclick = () => {
+function randomize() {
   Object.assign(state, {
     shape: pick(Object.keys(SHAPES)), width: rnd(0.85, 1.2), height: rnd(0.85, 1.2), depth: rnd(0.8, 1.15),
     taper: Math.random() < 0.6 ? 0 : rnd(-0.4, 0.5), wobble: rnd(0.1, 0.7), seed: (Math.random() * 1000) | 0,
@@ -172,15 +174,26 @@ document.getElementById('btn-random').onclick = () => {
     emotion: pick(Object.keys(EMOTIONS)), anim: pick(Object.keys(ANIMS)),
   });
   hero.clearParticles(); rebuildAll(); ui.refresh(); saveHashSoon();
-};
+}
 
-/* exports */
+/* exports: one split button — main action + spring menu */
+const ICON = {
+  png: '<path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5"/><path d="M5 19h14"/>',
+  video: '<rect x="3" y="6" width="13" height="12" rx="3"/><path d="m16 10 5-3v10l-5-3"/>',
+  link: '<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/>',
+};
+const exportMenu = createExportMenu(document.getElementById('export'), [
+  { id: 'png', label: 'Скачать PNG', icon: ICON.png },
+  { id: 'video', label: 'Скачать видео', icon: ICON.video },
+  { id: 'link', label: 'Скопировать ссылку', icon: ICON.link },
+], { onRun: (id) => ({ png: exportPNG, video: exportVideo, link: copyLink })[id]() });
+
 function setExporting(on) {
   exporting = on;
   viewShift = panelSpace();
   applyViewShift();
 }
-document.getElementById('btn-png').onclick = () => {
+function exportPNG() {
   scene.background = null;
   setExporting(true); // centred character in the file
   renderer.render(scene, camera);
@@ -188,21 +201,20 @@ document.getElementById('btn-png').onclick = () => {
   scene.background = bgTex;
   canvas.toBlob((blob) => download(blob, 'claymate.png'), 'image/png');
   toast('PNG с прозрачным фоном сохранён');
-};
+}
 function download(blob, name) {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob); a.download = name; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 let recording = false;
-document.getElementById('btn-video').onclick = () => {
+function exportVideo() {
   if (recording || !window.MediaRecorder) return;
   recording = true;
-  const btn = document.getElementById('btn-video');
-  btn.classList.add('rec');
+  exportMenu.setBusy(true);
   // WebM VP9/VP8 keep the alpha channel; MP4 cannot, so it is not offered
   const type = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find((t) => MediaRecorder.isTypeSupported(t));
-  if (!type) { recording = false; btn.classList.remove('rec'); toast('Браузер не умеет записывать WebM'); return; }
+  if (!type) { recording = false; exportMenu.setBusy(false); toast('Браузер не умеет записывать WebM'); return; }
   scene.background = null; // transparent video
   setExporting(true);
   const rec = new MediaRecorder(canvas.captureStream(60), { mimeType: type, videoBitsPerSecond: 10e6 });
@@ -211,19 +223,19 @@ document.getElementById('btn-video').onclick = () => {
   rec.onstop = () => {
     scene.background = bgTex;
     setExporting(false);
-    recording = false; btn.classList.remove('rec');
+    recording = false; exportMenu.setBusy(false);
     download(new Blob(chunks, { type }), 'claymate.webm');
     toast('Видео с прозрачным фоном готово');
   };
   rec.start();
   toast('Записываю 4 секунды с прозрачным фоном…');
   setTimeout(() => rec.stop(), 4000);
-};
-document.getElementById('btn-link').onclick = async () => {
+}
+async function copyLink() {
   history.replaceState(null, '', '#' + encodeState());
   try { await navigator.clipboard.writeText(location.href); toast('Ссылка на персонажа скопирована'); }
   catch { toast('Ссылка в адресной строке'); }
-};
+}
 
 /* ---------------- pointer ---------------- */
 const pointer = { x: 0, y: 0, active: false, last: 0 };
