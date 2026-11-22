@@ -191,6 +191,8 @@ body.panel-open #panel { width: var(--panel-w); }
 .shape-btn:hover svg { transform: scale(1.06); }
 .shape-btn.on { color: var(--ink); }
 .shape-btn.on svg { fill: var(--accent); stroke: var(--accent); }
+/* icon-only "off" tile keeps the grid row height */
+.tile-off { justify-content: flex-start; } /* icon lines up with the icons of captioned tiles */
 
 /* jelly slider: thumb and value drop fuse into one liquid shape */
 .jelly { position: relative; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }

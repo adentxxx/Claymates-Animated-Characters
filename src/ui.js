@@ -18,6 +18,8 @@ const SHAPE_ICONS = {
   ghost: '<path d="M8 18a12 12 0 0 1 24 0v16l-4-3-4 3-4-3-4 3-4-3-4 3Z"/>',
 };
 
+const OFF_ICON = '<circle cx="20" cy="20" r="11" fill="none" stroke-width="3"/><path d="M12.5 12.5l15 15" fill="none" stroke-width="3" stroke-linecap="round"/>';
+
 const TABS = [
   { id: 'shape', label: 'Форма', controls: [
     { key: 'shape', type: 'shapes' },
@@ -38,9 +40,13 @@ const TABS = [
     { key: 'limbColor', type: 'color', label: 'Цвет рук и ног', palette: PALETTE, showIf: (s) => !s.limbSame },
   ] },
   { id: 'face', label: 'Лицо', controls: [
-    { key: 'eyes', type: 'choice', label: 'Глаза', options: [
-      { v: 'dots', label: '• •' }, { v: 'googly', label: 'Глазастые' }, { v: 'ovals', label: 'Овалы' },
-      { v: 'lines', label: '| |' }, { v: 'pixel', label: 'Пиксели' }, { v: 'none', label: 'Нет' }] },
+    { key: 'eyes', type: 'iconGrid', label: 'Глаза', options: [
+      { v: 'none', label: 'Нет', icon: OFF_ICON },
+      { v: 'dots', label: 'Точки', icon: '<ellipse cx="13.5" cy="20" rx="4.6" ry="5.6"/><ellipse cx="26.5" cy="20" rx="4.6" ry="5.6"/>' },
+      { v: 'googly', label: 'Глазастые', icon: '<circle cx="12.5" cy="20" r="8.5" fill="#fff" stroke-width="2.4"/><circle cx="27.5" cy="20" r="8.5" fill="#fff" stroke-width="2.4"/><circle cx="14.2" cy="21.2" r="4" stroke="none"/><circle cx="29.2" cy="21.2" r="4" stroke="none"/>' },
+      { v: 'ovals', label: 'Овалы', icon: '<ellipse cx="13.5" cy="20" rx="4.8" ry="8.5"/><ellipse cx="26.5" cy="20" rx="4.8" ry="8.5"/>' },
+      { v: 'lines', label: 'Палочки', icon: '<rect x="11" y="10" width="5.5" height="20" rx="2.75"/><rect x="23.5" y="10" width="5.5" height="20" rx="2.75"/>' },
+      { v: 'pixel', label: 'Пиксели', icon: '<rect x="8.5" y="9.5" width="9" height="21" rx="2.5"/><rect x="22.5" y="9.5" width="9" height="21" rx="2.5"/>' }] },
     { key: 'eyeSize', type: 'slider', label: 'Размер глаз', min: 0.5, max: 1.8, step: 0.01 },
     { key: 'eyeSpacing', type: 'slider', label: 'Расстояние между глазами', min: 0.12, max: 0.8, step: 0.01 },
     { key: 'faceY', type: 'slider', label: 'Высота лица', min: 0.2, max: 0.85, step: 0.01 },
@@ -168,6 +174,23 @@ export function createUI({ state, onChange, onPreset, onRandom }) {
         const pill = createMorphPill(grid, 'morph-pill morph-pill--outline');
         refreshFn = () => grid.querySelectorAll('.shape-btn').forEach((b) => {
           const on = b.dataset.v === state.shape; b.classList.toggle('on', on); if (on) pill.moveTo(b);
+        });
+        break;
+      }
+      case 'iconGrid': {
+        // same tiles as the shape grid: icon + caption; the "off" option is icon only
+        const grid = h('div', 'shape-grid');
+        for (const o of c.options) {
+          const off = o.v === 'none' || o.v === 'off';
+          const b = h('button', 'shape-btn' + (off ? ' tile-off' : ''), `<svg viewBox="0 0 40 40">${o.icon}</svg>${off ? '' : `<span>${o.label}</span>`}`);
+          b.dataset.v = o.v; b.onclick = () => set(c.key, o.v);
+          if (off) { b.title = o.label; b.setAttribute('aria-label', o.label); }
+          grid.appendChild(b);
+        }
+        wrap.appendChild(grid);
+        const pill = createMorphPill(grid, 'morph-pill morph-pill--outline');
+        refreshFn = () => grid.querySelectorAll('.shape-btn').forEach((b) => {
+          const on = b.dataset.v === state[c.key]; b.classList.toggle('on', on); if (on) pill.moveTo(b);
         });
         break;
       }
