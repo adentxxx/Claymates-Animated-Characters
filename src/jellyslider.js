@@ -104,11 +104,13 @@ export function createJellySlider(o) {
   const localX = (e) => e.clientX - rail.getBoundingClientRect().left;
 
   rail.addEventListener('pointerdown', (e) => {
+    e.preventDefault(); // no text selection while dragging
     dragging = true; try { rail.setPointerCapture(e.pointerId); } catch {}
     tune(X, SPRING.follow);
     X.t = rubber(localX(e), R, Wd - R);
     sync(); emit(false);
     hit.focus({ preventScroll: true });
+    window.getSelection && window.getSelection().removeAllRanges();
   });
   rail.addEventListener('pointermove', (e) => { if (dragging) { X.t = rubber(localX(e), R, Wd - R); wake(); emit(false); } });
   const end = () => {

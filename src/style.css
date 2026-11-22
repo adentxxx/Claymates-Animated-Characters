@@ -108,6 +108,7 @@ body[data-stage="anim"] .presets-wrap { display: none; }
 
 /* ---------- panel ---------- */
 #panel {
+  -webkit-user-select: none; user-select: none;
   width: 0; flex: none; background: var(--panel); border-left: 1px solid var(--line); display: flex; flex-direction: column;
   overflow: hidden; transition: width .25s ease;
 }
@@ -133,7 +134,7 @@ body.panel-open #panel { width: var(--panel-w); }
 .shape-btn.on svg { fill: #8d8eff; stroke: #8d8eff; }
 
 /* jelly slider: thumb and value drop fuse into one liquid shape */
-.jelly { position: relative; }
+.jelly { position: relative; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .jelly-rail { position: relative; height: 32px; touch-action: none; cursor: pointer; }
 .jelly-track { position: absolute; left: 0; right: 0; top: 13px; height: 6px; border-radius: 999px; background: #e3e4ec; overflow: hidden; }
 .jelly-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--ink); border-radius: 999px; }
