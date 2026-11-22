@@ -98,12 +98,13 @@ export const MATERIALS = {
 const LEGACY = { vinyl: 'matte', glossy: 'glass', clay: 'matte' };
 export const normalizeMaterial = (k) => LEGACY[k] || (MATERIALS[k] ? k : 'matte');
 
-/* Soft gradient glow: two-colour vertical gradient emitted from inside,
-   frosted transmission and a bright fresnel rim. */
+/* Soft gradient glow: two-colour vertical gradient emitted from inside and a bright
+   fresnel rim. No transmission: the look must not depend on what is behind the body,
+   otherwise transparent PNG/video exports came out dark and see-through. */
 function glowMaterial(c1, c2, vertexColors) {
   const m = new THREE.MeshPhysicalMaterial({
     color: c1.clone().lerp(new THREE.Color(0xffffff), 0.55), vertexColors: false,
-    roughness: 0.5, transmission: 0.75, thickness: 1.2, ior: 1.25, clearcoat: 0.35, clearcoatRoughness: 0.5, dithering: true,
+    roughness: 0.5, clearcoat: 0.35, clearcoatRoughness: 0.5, dithering: true,
   });
   const uniforms = { uC1: { value: c1.clone() }, uC2: { value: c2.clone() }, uYmin: { value: 0 }, uYmax: { value: 2 } };
   m.userData.uniforms = uniforms;
@@ -120,7 +121,7 @@ function glowMaterial(c1, c2, vertexColors) {
           vec3 grad = mix(uC1, uC2, smoothstep(0.15, 0.85, gy) + 0.15 * sin(vObjPos.x * 2.5 + vObjPos.z * 1.5));
           float facing = clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0);
           float fr = 1.0 - facing;
-          diffuseColor.rgb = mix(vec3(1.0), grad, 0.6);
+          diffuseColor.rgb = mix(vec3(1.0), grad, 0.5);
           totalEmissiveRadiance += grad * (1.05 * pow(facing, 1.3)) + vec3(1.0) * pow(fr, 2.6) * 0.95;
         }`);
   };
@@ -164,12 +165,11 @@ export function createBodyMaterial(kind, color, vertexColors = true, color2 = '#
       m = new THREE.MeshPhysicalMaterial({ color: c, vertexColors, roughness: 0.62, sheen: 0.55, sheenRoughness: 0.55, sheenColor: c.clone().lerp(new THREE.Color(0xffffff), 0.5), envMapIntensity: 0.8 });
       return addClaySurface(m, 0, 1);
     case 'glass':
-      // glossy translucent candy plastic: saturated body, light passing through thin edges,
-      // crisp clear-coat highlights
+      // glossy candy plastic: saturated body, lighter "see-through" edges and crisp clear-coat
+      // highlights, all from shading — no transmission, so exports look exactly like the site
       m = new THREE.MeshPhysicalMaterial({
         color: c, vertexColors: false,
-        transmission: 0.3, thickness: 1.4, ior: 1.32, roughness: 0.05, metalness: 0,
-        attenuationColor: c, attenuationDistance: 0.6,
+        roughness: 0.05, metalness: 0,
         specularIntensity: 1, specularColor: new THREE.Color(0xffffff),
         clearcoat: 1, clearcoatRoughness: 0.015, envMapIntensity: 2.8, dithering: true,
       });
