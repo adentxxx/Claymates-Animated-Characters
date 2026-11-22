@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { makeSDF, Surface } from './sdf.js';
 import { buildBodyGeometry } from './mesher.js';
-import { createBodyMaterial, createFurShells, createFaceMaterials, createAccMaterial, GOLD, LENS, LEAF } from './materials.js';
+import { createBodyMaterial, createFurShells, createFaceMaterials, createAccMaterial, createGlowShell, normalizeMaterial, GOLD, LENS, LEAF } from './materials.js';
 import { EMOTIONS, POSE_KEYS, newPose, computePose } from './animations.js';
 
 const V3 = THREE.Vector3;
@@ -83,6 +83,10 @@ export class Character {
     this.bodyMesh.castShadow = true; this.bodyMesh.receiveShadow = true;
     this.local.add(this.bodyMesh);
     this.furGroup = new THREE.Group(); this.local.add(this.furGroup);
+    this.core = new THREE.Group(); this.local.add(this.core);       // fluffy filling inside glass
+    this.halo = null;
+    this.glowShell = new THREE.Mesh(new THREE.BufferGeometry()); this.glowShell.visible = false; this.glowShell.renderOrder = 2;
+    this.local.add(this.glowShell);
     this.parts = new THREE.Group(); this.local.add(this.parts);
     this.fx = new THREE.Group();
     this.fm = createFaceMaterials();
@@ -115,24 +119,62 @@ export class Character {
     this.bodyMesh.geometry.dispose();
     this.bodyMesh.geometry = geo;
     for (const m of this.furGroup.children) m.geometry = geo;
+    this.glowShell.geometry = geo;
+    this.syncBounds(geo);
     this.sdf = sdf;
     this.box = geo.boundingBox.clone();
     this.surf = new Surface(sdf, this.box);
     this.local.position.y = -this.box.min.y;
   }
 
-  applyMaterial(st) {
-    for (const m of [this.bodyMat, this.limbMat, this.partMat]) m && m.dispose();
-    for (const s of this.furGroup.children) s.material.dispose();
-    this.bodyMat = createBodyMaterial(st.material, st.color, true);
-    this.partMat = createBodyMaterial(st.material, st.color, false);
-    this.limbMat = createBodyMaterial(st.material, st.limbSame ? st.color : st.limbColor, false);
-    this.bodyMesh.material = this.bodyMat;
-    this.faceOff = st.material === 'plush' ? 0.05 : 0;
-    this.furGroup.clear();
-    if (st.material === 'plush') {
-      for (const m of createFurShells(st.color)) this.furGroup.add(new THREE.Mesh(this.bodyMesh.geometry, m));
+  syncBounds(geo) {
+    const bb = geo.boundingBox;
+    const c = bb.getCenter(new V3());
+    this.core.position.copy(c);
+    for (const m of this.core.children) { m.geometry = geo; m.position.copy(c).negate(); }
+    for (const mat of [this.bodyMat, this.glowShell.material, this.limbMat, this.partMat]) {
+      const u = mat && (mat.userData.uniforms || mat.uniforms);
+      if (u && u.uYmin) { u.uYmin.value = bb.min.y; u.uYmax.value = bb.max.y; }
     }
+  }
+
+  applyMaterial(st) {
+    const kind = normalizeMaterial(st.material);
+    for (const m of [this.bodyMat, this.limbMat, this.partMat]) m && m.dispose();
+    for (const s of [...this.furGroup.children, ...this.core.children]) s.material.dispose();
+    if (this.glowShell.material && this.glowShell.material.dispose) this.glowShell.material.dispose();
+    this.bodyMat = createBodyMaterial(kind, st.color, true, st.color2);
+    const limbKind = kind === 'glass' ? 'glassSolid' : kind;
+    this.partMat = createBodyMaterial(limbKind, st.color, false, st.color2);
+    this.limbMat = createBodyMaterial(limbKind, st.limbSame ? st.color : st.limbColor, false, st.color2);
+    this.bodyMesh.material = this.bodyMat;
+    this.faceOff = kind === 'plush' ? 0.05 : 0;
+    const geo = this.bodyMesh.geometry;
+
+    this.furGroup.clear();
+    if (kind === 'plush') for (const m of createFurShells(st.color)) this.furGroup.add(new THREE.Mesh(geo, m));
+
+    // glass: optional fluffy filling, slightly smaller than the shell
+    this.core.clear();
+    if (kind === 'glass' && st.filling) {
+      const base = createBodyMaterial('plush', st.color, true);
+      this.core.add(new THREE.Mesh(geo, base));
+      for (const m of createFurShells(st.color, 12, 0.08)) this.core.add(new THREE.Mesh(geo, m));
+      this.core.scale.setScalar(0.8);
+    }
+
+    // glow: soft halo around the silhouette
+    this.glowShell.visible = kind === 'glow';
+    this.glowShell.material = kind === 'glow' ? createGlowShell(st.color, st.color2) : new THREE.MeshBasicMaterial();
+
+    // face ink: tinted strokes for the glow look, near-black otherwise
+    const ink = kind === 'glow' ? new THREE.Color(st.color).lerp(new THREE.Color(st.color2), 0.3).multiplyScalar(0.55) : new THREE.Color(0x15151c);
+    this.fm.black.color.copy(ink);
+    this.fm.mouth.color.copy(kind === 'glow' ? ink : new THREE.Color(0x3b1422));
+    this.fm.black.transparent = kind === 'glow'; this.fm.black.opacity = kind === 'glow' ? 0.85 : 1;
+
+    this.bodyMesh.castShadow = kind !== 'glow';
+    if (this.box) this.syncBounds(geo);
     const fix = (o) => {
       if (o.userData.mat === 'limb') o.material = this.limbMat;
       if (o.userData.mat === 'part') o.material = this.partMat;
@@ -285,7 +327,8 @@ export class Character {
       const fore = this.limbMesh(new THREE.CapsuleGeometry(r * 0.95, l2, 8, 16)); fore.position.y = -l2 / 2;
       const hand = this.limbMesh(new THREE.SphereGeometry(hr, 24, 16)); hand.position.y = -l2 - hr * 0.25; hand.scale.set(1, 0.95, 0.85);
       elbow.add(fore, hand);
-      shoulder.add(up, elbow);
+      const joint = this.limbMesh(new THREE.SphereGeometry(r * 1.12, 20, 14));
+      shoulder.add(up, elbow, joint);
       this.parts.add(shoulder);
       this.arms.push({ shoulder, elbow, side });
     }
@@ -313,7 +356,8 @@ export class Character {
       const foot = this.limbMesh(new THREE.SphereGeometry(1, 28, 18));
       foot.scale.set(cfg.foot[0] * t, cfg.foot[1] * t, cfg.foot[2] * t);
       foot.position.set(0, -hipY + footH, cfg.foot[2] * t * 0.25);
-      hip.add(leg, foot);
+      const joint = this.limbMesh(new THREE.SphereGeometry(r * 1.15, 20, 14));
+      hip.add(leg, foot, joint);
       this.legGroup.add(hip);
       this.legs.push({ hip, side });
     }

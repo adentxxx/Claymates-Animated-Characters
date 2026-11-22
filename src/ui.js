@@ -31,6 +31,8 @@ export const TABS = [
   { id: 'material', label: 'Материал', controls: [
     { key: 'material', type: 'choice', label: 'Фактура', options: Object.entries(MATERIALS).map(([v, m]) => ({ v, label: m.label })) },
     { key: 'color', type: 'color', label: 'Цвет тела', palette: PALETTE },
+    { key: 'color2', type: 'color', label: 'Второй цвет градиента', palette: PALETTE, showIf: (s) => s.material === 'glow' },
+    { key: 'filling', type: 'toggle', label: 'Пушистая начинка внутри', showIf: (s) => s.material === 'glass' },
     { key: 'limbSame', type: 'toggle', label: 'Руки и ноги — цветом тела' },
     { key: 'limbColor', type: 'color', label: 'Цвет рук и ног', palette: PALETTE, showIf: (s) => !s.limbSame },
   ] },

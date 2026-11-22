@@ -5,6 +5,7 @@ import { Character } from './character.js';
 import { createUI } from './ui.js';
 import { DEFAULTS, PRESETS, PALETTE, presetState } from './presets.js';
 import { SHAPES } from './sdf.js';
+import { normalizeMaterial } from './materials.js';
 import { EMOTIONS, ANIMS } from './animations.js';
 import './style.css';
 
@@ -19,6 +20,7 @@ function loadFromHash() {
   return null;
 }
 const state = loadFromHash() || presetState(3);
+state.material = normalizeMaterial(state.material);
 
 /* ---------------- renderer & scene ---------------- */
 const stage = document.getElementById('stage');
@@ -81,7 +83,7 @@ scene.add(hero.root, hero.fx);
 
 /* ---------------- rebuild pipeline ---------------- */
 const MESH_KEYS = new Set(['shape', 'width', 'height', 'depth', 'taper', 'lean', 'wobble', 'seed']);
-const MAT_KEYS = new Set(['color', 'material', 'limbSame', 'limbColor']);
+const MAT_KEYS = new Set(['color', 'color2', 'material', 'limbSame', 'limbColor', 'filling']);
 const RUNTIME_KEYS = new Set(['emotion', 'anim', 'speed', 'blink', 'follow']);
 const SCENE_KEYS = new Set(['bg', 'pedestal', 'autoRotate']);
 const pending = { mesh: null, mat: false, parts: false, scene: false };
@@ -104,9 +106,24 @@ function flush() {
   if (pending.parts) { hero.buildParts(state); pending.parts = false; frameCharacter(); }
   if (pending.scene) { applyScene(); pending.scene = false; }
 }
+// background is rendered inside WebGL so glass / glow materials can refract it
+const bgCanvas = document.createElement('canvas'); bgCanvas.width = bgCanvas.height = 512;
+const bgTex = new THREE.CanvasTexture(bgCanvas); bgTex.colorSpace = THREE.SRGBColorSpace;
+function paintBackground(dark) {
+  const g = bgCanvas.getContext('2d');
+  const base = new THREE.Color(state.bg);
+  const inner = base.clone().lerp(new THREE.Color(0xffffff), dark ? 0.08 : 0.55);
+  const outer = base.clone().lerp(new THREE.Color(0x000000), dark ? 0.3 : 0.06);
+  const gr = g.createRadialGradient(256, 200, 0, 256, 200, 380);
+  gr.addColorStop(0, '#' + inner.getHexString()); gr.addColorStop(0.55, '#' + base.getHexString()); gr.addColorStop(1, '#' + outer.getHexString());
+  g.fillStyle = gr; g.fillRect(0, 0, 512, 512);
+  bgTex.needsUpdate = true;
+  scene.background = bgTex;
+}
 function applyScene() {
   stage.style.setProperty('--bg', state.bg);
   const dark = new THREE.Color(state.bg).getHSL({}).l < 0.4;
+  paintBackground(dark);
   stage.classList.toggle('dark', dark);
   document.body.classList.toggle('dark-stage', dark);
   ground.material.opacity = dark ? 0.35 : 0.16;
@@ -164,7 +181,7 @@ document.getElementById('btn-random').onclick = () => {
   Object.assign(state, {
     shape: pick(Object.keys(SHAPES)), width: rnd(0.85, 1.2), height: rnd(0.85, 1.2), depth: rnd(0.8, 1.15),
     taper: Math.random() < 0.6 ? 0 : rnd(-0.4, 0.5), lean: Math.random() < 0.7 ? 0 : rnd(-0.6, 0.6), wobble: rnd(0.1, 0.7), seed: (Math.random() * 1000) | 0,
-    color: pick(PALETTE), material: pick(['clay', 'clay', 'vinyl', 'plush', 'glossy']),
+    color: pick(PALETTE), material: pick(['clay', 'matte', 'glass', 'glass', 'glow', 'plush']), color2: pick(PALETTE),
     eyes: pick(['dots', 'dots', 'googly', 'ovals', 'lines', 'pixel']), eyeSize: rnd(0.8, 1.3), eyeSpacing: rnd(0.26, 0.5), faceY: rnd(0.45, 0.66),
     arms: pick(['stubby', 'noodle', 'none']), legs: pick(['stubby', 'thin', 'none', 'stubby']),
     head: pick(['none', 'none', 'beret', 'cap', 'party', 'crown', 'sprout', 'antenna', 'bunny', 'cat', 'bow', 'halo']),
@@ -177,7 +194,9 @@ document.getElementById('btn-random').onclick = () => {
 
 /* exports */
 document.getElementById('btn-png').onclick = () => {
+  scene.background = null;
   renderer.render(scene, camera);
+  scene.background = bgTex;
   canvas.toBlob((blob) => download(blob, 'claymate.png'), 'image/png');
   toast('PNG с прозрачным фоном сохранён');
 };
@@ -192,13 +211,12 @@ document.getElementById('btn-video').onclick = () => {
   recording = true;
   const btn = document.getElementById('btn-video');
   btn.classList.add('rec');
-  scene.background = new THREE.Color(state.bg);
   const type = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'].find((t) => MediaRecorder.isTypeSupported(t));
   const rec = new MediaRecorder(canvas.captureStream(60), { mimeType: type, videoBitsPerSecond: 10e6 });
   const chunks = [];
   rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
   rec.onstop = () => {
-    scene.background = null; recording = false; btn.classList.remove('rec');
+    recording = false; btn.classList.remove('rec');
     download(new Blob(chunks, { type }), type.includes('mp4') ? 'claymate.mp4' : 'claymate.webm');
     toast('Видео готово');
   };

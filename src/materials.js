@@ -49,23 +49,111 @@ function addClaySurface(mat, bump, freq) {
   return mat;
 }
 
-export const MATERIALS = {
-  clay:   { label: 'Пластилин' },
-  vinyl:  { label: 'Винил' },
-  glossy: { label: 'Глянец' },
-  plush:  { label: 'Плюш' },
-};
+/* Fresnel rim light (bright glassy edge). */
+function addRim(mat, color, strength, power) {
+  const uniforms = { uRimColor: { value: color }, uRim: { value: strength }, uRimPow: { value: power } };
+  mat.userData.uniforms = uniforms;
+  mat.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, uniforms);
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>' + String.fromCharCode(10) + 'uniform vec3 uRimColor; uniform float uRim; uniform float uRimPow;')
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+        totalEmissiveRadiance += uRimColor * pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), uRimPow) * uRim;`);
+  };
+  mat.customProgramCacheKey = () => 'rim';
+  return mat;
+}
 
-export function createBodyMaterial(kind, color, vertexColors = true) {
+export const MATERIALS = {
+  clay:  { label: 'Пластилин' },
+  matte: { label: 'Матовый' },
+  glass: { label: 'Стекло-желе' },
+  glow:  { label: 'Свечение' },
+  plush: { label: 'Плюш' },
+};
+const LEGACY = { vinyl: 'matte', glossy: 'glass' };
+export const normalizeMaterial = (k) => LEGACY[k] || (MATERIALS[k] || k === 'glassSolid' ? k : 'clay');
+
+/* Soft gradient glow: two-colour vertical gradient emitted from inside,
+   frosted transmission and a bright fresnel rim. */
+function glowMaterial(c1, c2, vertexColors) {
+  const m = new THREE.MeshPhysicalMaterial({
+    color: c1.clone().lerp(new THREE.Color(0xffffff), 0.55), vertexColors: false,
+    roughness: 0.5, transmission: 0.75, thickness: 1.2, ior: 1.25, clearcoat: 0.35, clearcoatRoughness: 0.5,
+  });
+  const uniforms = { uC1: { value: c1.clone() }, uC2: { value: c2.clone() }, uYmin: { value: 0 }, uYmax: { value: 2 } };
+  m.userData.uniforms = uniforms;
+  m.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, uniforms);
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vObjPos;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvObjPos = position;');
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform vec3 uC1; uniform vec3 uC2; uniform float uYmin; uniform float uYmax; varying vec3 vObjPos;')
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+        {
+          float gy = clamp((vObjPos.y - uYmin) / max(uYmax - uYmin, 0.001), 0.0, 1.0);
+          vec3 grad = mix(uC1, uC2, smoothstep(0.15, 0.85, gy) + 0.15 * sin(vObjPos.x * 2.5 + vObjPos.z * 1.5));
+          float facing = clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0);
+          float fr = 1.0 - facing;
+          diffuseColor.rgb = mix(vec3(1.0), grad, 0.6);
+          totalEmissiveRadiance += grad * (1.05 * pow(facing, 1.3)) + vec3(1.0) * pow(fr, 2.6) * 0.95;
+        }`);
+  };
+  m.customProgramCacheKey = () => 'glow-body';
+  return m;
+}
+
+/* Soft halo around the silhouette (back-face shell pushed along normals). */
+export function createGlowShell(c1, c2, width = 0.09) {
+  return new THREE.ShaderMaterial({
+    uniforms: { uC1: { value: new THREE.Color(c1) }, uC2: { value: new THREE.Color(c2) }, uW: { value: width }, uYmin: { value: 0 }, uYmax: { value: 2 } },
+    vertexShader: `
+      uniform float uW; varying vec3 vN; varying vec3 vV; varying float vY;
+      void main(){
+        vec3 p = position + normal * uW;
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz); vY = position.y;
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `
+      uniform vec3 uC1; uniform vec3 uC2; uniform float uYmin; uniform float uYmax;
+      varying vec3 vN; varying vec3 vV; varying float vY;
+      void main(){
+        float d = abs(dot(normalize(vN), normalize(vV)));
+        float gy = clamp((vY - uYmin) / max(uYmax - uYmin, 0.001), 0.0, 1.0);
+        vec3 col = mix(mix(uC1, uC2, gy), vec3(1.0), 0.35);
+        gl_FragColor = vec4(col, pow(d, 1.8) * 0.75);
+        #include <colorspace_fragment>
+      }`,
+    side: THREE.BackSide, transparent: true, depthWrite: false,
+  });
+}
+
+export function createBodyMaterial(kind, color, vertexColors = true, color2 = '#ff7ad9') {
+  kind = normalizeMaterial(kind);
   const c = new THREE.Color(color);
   let m;
   switch (kind) {
-    case 'vinyl':
-      m = new THREE.MeshPhysicalMaterial({ color: c, vertexColors, roughness: 0.4, clearcoat: 0.4, clearcoatRoughness: 0.3, sheen: 0.3, sheenRoughness: 0.5, sheenColor: new THREE.Color(0xffffff) });
-      return addClaySurface(m, 0.0012, 6);
-    case 'glossy':
-      m = new THREE.MeshPhysicalMaterial({ color: c, vertexColors, roughness: 0.16, clearcoat: 1, clearcoatRoughness: 0.06, iridescence: 0.08 });
+    case 'matte':
+      // smooth, flowing, no micro-texture
+      m = new THREE.MeshPhysicalMaterial({ color: c, vertexColors, roughness: 0.62, sheen: 0.55, sheenRoughness: 0.55, sheenColor: c.clone().lerp(new THREE.Color(0xffffff), 0.5), envMapIntensity: 0.8 });
       return addClaySurface(m, 0, 1);
+    case 'glass':
+      // clear plastic jelly with strong highlights
+      m = new THREE.MeshPhysicalMaterial({
+        color: c.clone().lerp(new THREE.Color(0xffffff), 0.5), vertexColors: false,
+        transmission: 1, thickness: 0.55, ior: 1.38, roughness: 0.03, metalness: 0,
+        attenuationColor: c.clone().lerp(new THREE.Color(0xffffff), 0.25), attenuationDistance: 1.6, specularIntensity: 1,
+        clearcoat: 1, clearcoatRoughness: 0.02, iridescence: 0.4, iridescenceIOR: 1.3, envMapIntensity: 2.2,
+      });
+      return addRim(m, c.clone().lerp(new THREE.Color(0xffffff), 0.6), 0.9, 2.6);
+    case 'glassSolid':
+      // limbs & ears of glass characters: glossy candy instead of thin dark refraction
+      m = new THREE.MeshPhysicalMaterial({ color: c.clone().lerp(new THREE.Color(0xffffff), 0.1), roughness: 0.08, clearcoat: 1, clearcoatRoughness: 0.03, iridescence: 0.3, envMapIntensity: 1.6 });
+      return addRim(m, c.clone().lerp(new THREE.Color(0xffffff), 0.6), 0.6, 2.5);
+    case 'glow':
+      return glowMaterial(c, new THREE.Color(color2), vertexColors);
     case 'plush':
       m = new THREE.MeshPhysicalMaterial({ color: c.clone().multiplyScalar(0.8), vertexColors, roughness: 1, sheen: 1, sheenRoughness: 0.45, sheenColor: c.clone().lerp(new THREE.Color(0xffffff), 0.45) });
       return addClaySurface(m, 0.006, 60);
