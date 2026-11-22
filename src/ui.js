@@ -183,8 +183,13 @@ export function createUI({ state, onChange, onPreset, onRandom }) {
       }
       case 'choice': {
         const row = h('div', 'chips');
-        for (const o of c.options) {
-          const b = h('button', 'chip', `<span>${o.label}</span>`);
+        // "turn it off" options (Нет / Ничего) always come first and carry a ⊘ icon
+        const isOff = (o) => o.v === 'none' || o.v === 'off';
+        const opts = [...c.options.filter(isOff), ...c.options.filter((o) => !isOff(o))];
+        for (const o of opts) {
+          const b = isOff(o)
+            ? h('button', 'chip chip-off', `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M6 6l12 12"/></svg><span>${o.label}</span>`)
+            : h('button', 'chip', `<span>${o.label}</span>`);
           b.dataset.v = o.v; b.onclick = () => set(c.key, o.v);
           row.appendChild(b);
         }
