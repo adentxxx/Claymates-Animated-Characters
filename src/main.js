@@ -126,7 +126,7 @@ const ui = createUI({
 const stageItems = STAGES.map((st, i) => ({ id: st.id, title: st.title, key: String(i + 1) }));
 const stageBar = createStageBar(document.getElementById('stagebar'), stageItems, {
   initial: ui.stage,
-  onSelect: (id) => { ui.setStage(id); document.body.classList.add('panel-open'); },
+  onSelect: (id) => ui.setStage(id),
 });
 window.addEventListener('keydown', (e) => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -136,7 +136,6 @@ window.addEventListener('keydown', (e) => {
   if (!item || item.id === ui.stage) return;
   ui.setStage(item.id);
   stageBar.select(item.id);
-  document.body.classList.add('panel-open');
 });
 
 let hashTimer = 0;
@@ -176,9 +175,16 @@ document.getElementById('btn-random').onclick = () => {
 };
 
 /* exports */
+function setExporting(on) {
+  exporting = on;
+  viewShift = panelSpace();
+  applyViewShift();
+}
 document.getElementById('btn-png').onclick = () => {
   scene.background = null;
+  setExporting(true); // centred character in the file
   renderer.render(scene, camera);
+  setExporting(false);
   scene.background = bgTex;
   canvas.toBlob((blob) => download(blob, 'claymate.png'), 'image/png');
   toast('PNG с прозрачным фоном сохранён');
@@ -198,11 +204,13 @@ document.getElementById('btn-video').onclick = () => {
   const type = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find((t) => MediaRecorder.isTypeSupported(t));
   if (!type) { recording = false; btn.classList.remove('rec'); toast('Браузер не умеет записывать WebM'); return; }
   scene.background = null; // transparent video
+  setExporting(true);
   const rec = new MediaRecorder(canvas.captureStream(60), { mimeType: type, videoBitsPerSecond: 10e6 });
   const chunks = [];
   rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
   rec.onstop = () => {
     scene.background = bgTex;
+    setExporting(false);
     recording = false; btn.classList.remove('rec');
     download(new Blob(chunks, { type }), 'claymate.webm');
     toast('Видео с прозрачным фоном готово');
@@ -216,7 +224,6 @@ document.getElementById('btn-link').onclick = async () => {
   try { await navigator.clipboard.writeText(location.href); toast('Ссылка на персонажа скопирована'); }
   catch { toast('Ссылка в адресной строке'); }
 };
-document.getElementById('btn-panel').onclick = () => document.body.classList.toggle('panel-open');
 
 /* ---------------- pointer ---------------- */
 const pointer = { x: 0, y: 0, active: false, last: 0 };
@@ -233,10 +240,25 @@ window.addEventListener('pointermove', (e) => {
 document.addEventListener('pointerleave', () => { pointer.active = false; });
 
 /* ---------------- loop ---------------- */
+// The floating panel covers the right part of the stage, so the view is shifted to keep the
+// character centred in the visible part. Exports drop the shift and come out centred.
+const panelEl = document.getElementById('panel');
+let viewShift = 0, exporting = false;
+function panelSpace() {
+  if (exporting || innerWidth <= 860 || !document.body.classList.contains('panel-open')) return 0;
+  return panelEl.offsetWidth + 16;
+}
+function applyViewShift() {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  if (Math.abs(viewShift) < 0.5) camera.clearViewOffset();
+  else camera.setViewOffset(w, h, viewShift / 2, 0, w, h);
+}
 function resize() {
   const w = stage.clientWidth, h = stage.clientHeight;
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
+  viewShift = panelSpace();
+  applyViewShift();
   camera.updateProjectionMatrix();
 }
 new ResizeObserver(resize).observe(stage);
@@ -249,6 +271,11 @@ function frame() {
   const dt = clock.getDelta();
   flush();
   if (performance.now() - pointer.last > 4000) pointer.active = false;
+  const target = panelSpace();
+  if (Math.abs(target - viewShift) > 0.5) {
+    viewShift = exporting ? target : viewShift + (target - viewShift) * Math.min(1, dt * 10);
+    applyViewShift();
+  }
   hero.update(dt, state, pointer);
   controls.update();
   renderer.render(scene, camera);

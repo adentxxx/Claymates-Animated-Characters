@@ -25,7 +25,6 @@ const TABS = [
     { key: 'depth', type: 'slider', label: 'Объём (толщина)', min: 0.45, max: 1.5, step: 0.01, mesh: true },
     { key: 'taper', type: 'slider', label: 'Сужение кверху', min: -0.8, max: 0.9, step: 0.01, mesh: true },
     { key: 'wobble', type: 'slider', label: 'Ручная лепка', min: 0, max: 1.2, step: 0.01, mesh: true },
-    { key: 'seed', type: 'button', label: '🎲 Перемешать неровности' },
   ] },
   { id: 'emotion', label: 'Эмоция', controls: [
     { key: 'emotion', type: 'cards', items: EMOTIONS },
@@ -91,8 +90,6 @@ const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) 
 export function createUI({ state, onChange, onPreset }) {
   const tabsEl = document.getElementById('tabs');
   const ctrlEl = document.getElementById('controls');
-  const titleEl = document.getElementById('stage-title');
-  const subEl = document.getElementById('stage-sub');
   const refreshers = [];
   const store = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch { return null; } };
 
@@ -121,8 +118,6 @@ export function createUI({ state, onChange, onPreset }) {
     stage = STAGES.find((s) => s.id === id) || STAGES[0];
     store('claymates.stage', stage.id);
     document.body.dataset.stage = stage.id;
-    titleEl.textContent = stage.title;
-    subEl.textContent = stage.sub;
     for (const k in tabBtns) tabBtns[k].hidden = tabBtns[k].dataset.stage !== stage.id;
     tabsEl.hidden = stage.tabs.length < 2;
     const tab = stage.tabs.some((t) => t.id === lastTab[stage.id]) ? lastTab[stage.id] : stage.tabs[0].id;
