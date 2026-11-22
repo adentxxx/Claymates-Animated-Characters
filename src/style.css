@@ -41,28 +41,28 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 /* export split button + spring menu */
 .xp { position: relative; }
 .xp-split {
-  display: flex; align-items: center; height: 44px; padding: 4px; border-radius: 14px;
+  display: flex; align-items: center; height: 56px; padding: 6px; border-radius: 18px; /* same size as the tab bar */
   background: var(--ink); color: #fff; box-shadow: var(--float-shadow);
 }
 .xp-main, .xp-more {
-  height: 34px; border-radius: 10px; display: flex; align-items: center; color: #fff;
+  height: 44px; border-radius: 12px; display: flex; align-items: center; color: #fff;
   transition: background .15s; -webkit-tap-highlight-color: transparent;
 }
 .xp-main { padding: 0 12px; will-change: transform; }
 .xp-main:hover, .xp-more:hover, .xp.open .xp-more { background: rgba(255,255,255,.12); }
 .xp-main:focus-visible, .xp-more:focus-visible { outline: 2px solid #8d8eff; outline-offset: -2px; }
-.xp-val { position: relative; width: 164px; height: 34px; overflow: hidden; }
+.xp-val { position: relative; width: 164px; height: 44px; overflow: hidden; }
 .xp-slot { position: absolute; inset: 0; display: flex; align-items: center; gap: 8px; will-change: transform, opacity; }
 .xp-slot b, .xp-opt b { font-size: 13px; font-weight: 700; letter-spacing: -.01em; white-space: nowrap; }
 .xp svg { flex: none; width: 18px; height: 18px; }
 .xp-div { width: 1px; height: 20px; margin: 0 2px; background: rgba(255,255,255,.18); }
-.xp-more { width: 34px; justify-content: center; color: rgba(255,255,255,.72); }
+.xp-more { width: 44px; justify-content: center; color: rgba(255,255,255,.72); }
 .xp-more svg { will-change: transform; }
 .xp.busy .xp-main { color: #ff8a95; animation: pulse 1s infinite; cursor: default; }
 @keyframes pulse { 50% { opacity: .6; } }
 
 .xp-menu {
-  position: absolute; left: calc(50% - 120px); bottom: 52px; width: 240px; height: 0; padding: 6px; border-radius: 16px; overflow: hidden; z-index: 7;
+  position: absolute; left: calc(50% - 120px); bottom: 64px; width: 240px; height: 0; padding: 6px; border-radius: 16px; overflow: hidden; z-index: 7;
   background: rgba(255,255,255,.96); backdrop-filter: blur(16px); border: var(--float-edge); box-shadow: var(--float-shadow);
   transform-origin: 50% 100%; visibility: hidden; will-change: transform, height, opacity;
 }
@@ -251,9 +251,10 @@ body.panel-open #panel { width: var(--panel-w); }
   .presets-wrap { top: 12px; right: 12px; }
   /* tabs pinned left, download button pinned right, on one line; free space between them */
   .stagebar { left: 12px; bottom: 12px; transform: none; }
-  .export-dock { left: auto; right: 12px; bottom: calc(12px + (56px - 44px) / 2); transform: none; }
+  .export-dock { left: auto; right: 12px; bottom: 12px; transform: none; }
   .xp-menu { left: auto; right: 0; transform-origin: 100% 100%; }
-  .xp-main { padding: 0 10px; }
+  .xp-main { padding: 0 8px; }
+  .xp-more { width: 38px; }
   .xp-val { width: 148px; }
   .xp-slot b { font-size: 12px; }
 }
