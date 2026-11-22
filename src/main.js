@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { Character } from './character.js';
-import { createUI } from './ui.js';
+import { createUI, STAGES } from './ui.js';
+import { createStageBar } from './stagebar.js';
 import { DEFAULTS, PRESETS, PALETTE, presetState } from './presets.js';
 import { SHAPES } from './sdf.js';
 import { normalizeMaterial } from './materials.js';
@@ -119,6 +120,23 @@ const ui = createUI({
   state,
   onChange,
   onPreset: (i) => { Object.assign(state, presetState(i)); hero.clearParticles(); rebuildAll(); ui.refresh(); saveHashSoon(); },
+});
+
+/* ---------------- stage bar: Дизайн / Анимация ---------------- */
+const stageItems = STAGES.map((st, i) => ({ id: st.id, title: st.title, key: String(i + 1) }));
+const stageBar = createStageBar(document.getElementById('stagebar'), stageItems, {
+  initial: ui.stage,
+  onSelect: (id) => { ui.setStage(id); document.body.classList.add('panel-open'); },
+});
+window.addEventListener('keydown', (e) => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const t = e.target;
+  if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+  const item = stageItems.find((it) => it.key === e.key);
+  if (!item || item.id === ui.stage) return;
+  ui.setStage(item.id);
+  stageBar.select(item.id);
+  document.body.classList.add('panel-open');
 });
 
 let hashTimer = 0;

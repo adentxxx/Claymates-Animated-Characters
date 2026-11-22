@@ -16,7 +16,7 @@ const SHAPE_ICONS = {
   ghost: '<path d="M8 18a12 12 0 0 1 24 0v16l-4-3-4 3-4-3-4 3-4-3-4 3Z"/>',
 };
 
-export const TABS = [
+const TABS = [
   { id: 'shape', label: 'Форма', controls: [
     { key: 'shape', type: 'shapes' },
     { key: 'width', type: 'slider', label: 'Ширина', min: 0.6, max: 1.6, step: 0.01, mesh: true },
@@ -25,6 +25,9 @@ export const TABS = [
     { key: 'taper', type: 'slider', label: 'Сужение кверху', min: -0.8, max: 0.9, step: 0.01, mesh: true },
     { key: 'wobble', type: 'slider', label: 'Ручная лепка', min: 0, max: 1.2, step: 0.01, mesh: true },
     { key: 'seed', type: 'button', label: '🎲 Перемешать неровности' },
+  ] },
+  { id: 'emotion', label: 'Эмоция', controls: [
+    { key: 'emotion', type: 'cards', items: EMOTIONS },
   ] },
   { id: 'material', label: 'Материал', controls: [
     { key: 'material', type: 'choice', label: 'Фактура', options: Object.entries(MATERIALS).map(([v, m]) => ({ v, label: m.label })) },
@@ -66,11 +69,21 @@ export const TABS = [
     { key: 'glassColor', type: 'color', label: 'Цвет оправы', palette: PALETTE, showIf: (s) => s.eyewear !== 'none' },
     { key: 'accSize', type: 'slider', label: 'Размер аксессуаров', min: 0.5, max: 1.8, step: 0.01 },
   ] },
-  { id: 'scene', label: 'Поведение', controls: [
+];
+
+const ANIM_TABS = [
+  { id: 'motion', label: 'Анимация', controls: [
+    { key: 'anim', type: 'cards', items: ANIMS },
+    { key: 'speed', type: 'slider', label: 'Скорость анимации', min: 0.2, max: 2.5, step: 0.01 },
     { key: 'follow', type: 'toggle', label: 'Следить за курсором' },
     { key: 'blink', type: 'toggle', label: 'Моргать' },
-    { key: 'speed', type: 'slider', label: 'Скорость анимации', min: 0.2, max: 2.5, step: 0.01 },
   ] },
+];
+
+// Two stages of building a character: first how it looks, then how it moves.
+export const STAGES = [
+  { id: 'design', title: 'Дизайн', sub: 'Форма, эмоция, материал и детали', tabs: TABS },
+  { id: 'anim', title: 'Анимация', sub: 'Как персонаж двигается', tabs: ANIM_TABS },
 ];
 
 const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
@@ -78,27 +91,46 @@ const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) 
 export function createUI({ state, onChange, onPreset }) {
   const tabsEl = document.getElementById('tabs');
   const ctrlEl = document.getElementById('controls');
+  const titleEl = document.getElementById('stage-title');
+  const subEl = document.getElementById('stage-sub');
   const refreshers = [];
-  let activeTab = 'shape';
-  try { activeTab = localStorage.getItem('claymates.tab') || 'shape'; } catch {}
+  const store = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch { return null; } };
 
-  /* ---- tabs ---- */
-  const tabBtns = {};
-  const panes = {};
-  for (const tab of TABS) {
-    const b = h('button', 'tab', tab.label);
-    b.onclick = () => select(tab.id);
-    tabsEl.appendChild(b); tabBtns[tab.id] = b;
-    const pane = h('div', 'pane');
-    panes[tab.id] = pane; ctrlEl.appendChild(pane);
-    for (const c of tab.controls) pane.appendChild(control(c));
+  /* ---- stages, each with its own tabs ---- */
+  const tabBtns = {}, panes = {}, lastTab = {};
+  let stage = null;
+  for (const st of STAGES) {
+    lastTab[st.id] = store('claymates.tab.' + st.id) || st.tabs[0].id;
+    for (const tab of st.tabs) {
+      const b = h('button', 'tab', tab.label);
+      b.dataset.stage = st.id;
+      b.onclick = () => select(tab.id);
+      tabsEl.appendChild(b); tabBtns[tab.id] = b;
+      const pane = h('div', 'pane');
+      pane.dataset.stage = st.id;
+      panes[tab.id] = pane; ctrlEl.appendChild(pane);
+      for (const c of tab.controls) pane.appendChild(control(c));
+    }
   }
   function select(id) {
-    activeTab = id;
-    try { localStorage.setItem('claymates.tab', id); } catch {}
+    lastTab[stage.id] = id;
+    store('claymates.tab.' + stage.id, id);
     for (const k in tabBtns) { tabBtns[k].classList.toggle('on', k === id); panes[k].hidden = k !== id; }
   }
-  select(TABS.some((t) => t.id === activeTab) ? activeTab : 'shape');
+  function setStage(id) {
+    stage = STAGES.find((s) => s.id === id) || STAGES[0];
+    store('claymates.stage', stage.id);
+    document.body.dataset.stage = stage.id;
+    titleEl.textContent = stage.title;
+    subEl.textContent = stage.sub;
+    for (const k in tabBtns) tabBtns[k].hidden = tabBtns[k].dataset.stage !== stage.id;
+    tabsEl.hidden = stage.tabs.length < 2;
+    const tab = stage.tabs.some((t) => t.id === lastTab[stage.id]) ? lastTab[stage.id] : stage.tabs[0].id;
+    select(tab);
+    ctrlEl.scrollTop = 0;
+    ctrlEl.classList.remove('enter'); void ctrlEl.offsetWidth; ctrlEl.classList.add('enter');
+  }
+  setStage(store('claymates.stage') || 'design');
 
   function set(key, value, live = false) {
     state[key] = value;
@@ -171,6 +203,17 @@ export function createUI({ state, onChange, onPreset }) {
         };
         break;
       }
+      case 'cards': {
+        const grid = h('div', 'card-grid');
+        for (const [k, it] of Object.entries(c.items)) {
+          const b = h('button', 'card', `<b>${it.icon}</b><span>${it.label}</span>`);
+          b.dataset.v = k; b.onclick = () => set(c.key, k);
+          grid.appendChild(b);
+        }
+        wrap.appendChild(grid);
+        refreshFn = () => grid.querySelectorAll('.card').forEach((b) => b.classList.toggle('on', b.dataset.v === state[c.key]));
+        break;
+      }
       case 'toggle': {
         wrap.classList.add('ctl-toggle');
         const sw = h('button', 'toggle', '<i></i>');
@@ -190,24 +233,6 @@ export function createUI({ state, onChange, onPreset }) {
     return wrap;
   }
 
-  /* ---- dock: emotions + animations ---- */
-  const emoRow = document.getElementById('emotions');
-  for (const [k, e] of Object.entries(EMOTIONS)) {
-    const b = h('button', 'dock-chip', `<b>${e.icon}</b><span>${e.label}</span>`);
-    b.dataset.v = k; b.onclick = () => set('emotion', k);
-    emoRow.appendChild(b);
-  }
-  const animRow = document.getElementById('anims');
-  for (const [k, a] of Object.entries(ANIMS)) {
-    const b = h('button', 'dock-chip', `<b>${a.icon}</b><span>${a.label}</span>`);
-    b.dataset.v = k; b.onclick = () => set('anim', k);
-    animRow.appendChild(b);
-  }
-  refreshers.push(() => {
-    emoRow.querySelectorAll('.dock-chip').forEach((b) => b.classList.toggle('on', b.dataset.v === state.emotion));
-    animRow.querySelectorAll('.dock-chip').forEach((b) => b.classList.toggle('on', b.dataset.v === state.anim));
-  });
-
   /* ---- presets ---- */
   const presetsEl = document.getElementById('presets');
   PRESETS.forEach((p, i) => {
@@ -218,5 +243,5 @@ export function createUI({ state, onChange, onPreset }) {
 
   function refresh() { for (const r of refreshers) r(); }
   refresh();
-  return { refresh };
+  return { refresh, setStage, get stage() { return stage.id; } };
 }
