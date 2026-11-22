@@ -208,28 +208,72 @@ function download(blob, name) {
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 let recording = false;
-function exportVideo() {
+// Seamless loop export. The clip is not a live recording: the character is switched to a
+// deterministic loop mode, warmed up over whole loops, then rendered frame by frame at a fixed
+// step and handed to the encoder one frame at a time. The clip covers whole animation
+// periods, so its last frame runs straight into its first.
+let paused = false;
+const LOOP_FPS = 30, MIN_CLIP = 2.5;
+async function exportVideo() {
   if (recording || !window.MediaRecorder) return;
-  recording = true;
-  exportMenu.setBusy(true);
   // WebM VP9/VP8 keep the alpha channel; MP4 cannot, so it is not offered
   const type = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find((t) => MediaRecorder.isTypeSupported(t));
-  if (!type) { recording = false; exportMenu.setBusy(false); toast('Браузер не умеет записывать WebM'); return; }
-  scene.background = null; // transparent video
-  setExporting(true);
-  const rec = new MediaRecorder(canvas.captureStream(60), { mimeType: type, videoBitsPerSecond: 10e6 });
+  if (!type) { toast('Браузер не умеет записывать WebM'); return; }
+  recording = true;
+  exportMenu.setBusy(true);
+
+  const P = (ANIMS[state.anim] || ANIMS.idle).period;            // loop length, animation seconds
+  const cycles = Math.max(1, Math.ceil((MIN_CLIP * state.speed) / P)); // whole loops, at least MIN_CLIP long
+  const D = P * cycles;                                             // clip, animation seconds
+  const real = D / state.speed;                                     // clip, video seconds
+  const frames = Math.max(2, Math.round(real * LOOP_FPS));
+  const stepReal = real / frames, stepAnim = D / frames;
+  const noPointer = { x: 0, y: 0, active: false };
+
+  paused = true;
+  scene.background = null;   // transparent video
+  setExporting(true);        // character centred in the frame
+  hero.beginLoop(state, D);
+  // warm-up over whole clips so springy parts (ears, antennas) settle into the loop
+  const warm = D * Math.max(1, Math.ceil(3 / D));
+  // (stops one step short, so the first captured frame is the next step, not a repeat:
+  // a repeated moment would read as zero velocity to the springs and kink the seam)
+  hero.time = 0;
+  for (let i = 0, n = Math.round(warm / stepAnim) - 1; i < n; i++) hero.update(stepReal, state, noPointer);
+  hero.time = warm - stepAnim; // trims float drift; the first captured frame lands on the loop start
+
+  const stream = canvas.captureStream(0);
+  const track = stream.getVideoTracks()[0];
+  const rec = new MediaRecorder(stream, { mimeType: type, videoBitsPerSecond: 10e6 });
   const chunks = [];
   rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
-  rec.onstop = () => {
+  const stopped = new Promise((r) => { rec.onstop = r; });
+  rec.start();
+  const t0 = performance.now();
+  try {
+    for (let k = 0; k < frames; k++) {
+      hero.update(stepReal, state, noPointer);
+      controls.update();
+      renderer.render(scene, camera);
+      track.requestFrame();
+      if (k % 10 === 0) toast(`Собираю цикл… ${Math.round((k / frames) * 100)}%`);
+      // frames go out at video speed so the encoder timestamps match the clip
+      const wait = t0 + (k + 1) * stepReal * 1000 - performance.now();
+      await new Promise((r) => setTimeout(r, Math.max(0, wait)));
+    }
+  } finally {
+    rec.stop();
+    await stopped;
+    track.stop();
+    hero.endLoop();
     scene.background = bgTex;
     setExporting(false);
-    recording = false; exportMenu.setBusy(false);
-    download(new Blob(chunks, { type }), 'claymate.webm');
-    toast('Видео с прозрачным фоном готово');
-  };
-  rec.start();
-  toast('Записываю 4 секунды с прозрачным фоном…');
-  setTimeout(() => rec.stop(), 4000);
+    paused = false;
+    recording = false;
+    exportMenu.setBusy(false);
+  }
+  download(new Blob(chunks, { type }), `claymate-${state.anim}-loop.webm`);
+  toast(`Цикл ${real.toFixed(1).replace('.', ',')} с готов, фон прозрачный`);
 }
 async function copyLink() {
   history.replaceState(null, '', '#' + encodeState());
@@ -281,6 +325,7 @@ resize();
 const clock = new THREE.Clock();
 function frame() {
   const dt = clock.getDelta();
+  if (paused) { requestAnimationFrame(frame); return; } // loop export drives rendering itself
   flush();
   if (performance.now() - pointer.last > 4000) pointer.active = false;
   const target = panelSpace();
@@ -295,4 +340,4 @@ function frame() {
 }
 frame();
 
-window.__claymates = { state, hero, renderer, scene, camera };
+window.__claymates = { state, hero, renderer, scene, camera, exportVideo };

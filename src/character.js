@@ -3,7 +3,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { makeSDF, Surface } from './sdf.js';
 import { buildBodyGeometry } from './mesher.js';
 import { createBodyMaterial, createFurShells, createFaceMaterials, createGlowShell, normalizeMaterial } from './materials.js';
-import { EMOTIONS, POSE_KEYS, newPose, computePose } from './animations.js';
+import { EMOTIONS, ANIMS, POSE_KEYS, newPose, computePose } from './animations.js';
 
 const V3 = THREE.Vector3;
 const Z = new V3(0, 0, 1), Y = new V3(0, 1, 0);
@@ -96,7 +96,9 @@ export class Character {
     this.eyeModes = ['base', 'base'];
     this.pendingModes = null;
     this.blinkT = -1; this.blinkClock = 0; this.nextBlink = 2;
-    this.particles = []; this.fxTimer = 0;
+    this.particles = new Map(); this.fxType = null;
+    this.loopClip = null; // set while a seamless loop is being exported
+    this.period = 6;
     this.jiggle = [];
     this.prevY = 0; this.prevPz = 0;
     this.ptr = { x: 0, y: 0 };
@@ -582,6 +584,30 @@ export class Character {
   }
 
   /* ================= runtime ================= */
+  // Sine that repeats a whole number of times per animation loop (frequency rounded to fit),
+  // so secondary wobbles never break the seam of an exported loop.
+  lsin(t, freq, phase = 0) {
+    const P = this.period;
+    const n = Math.max(1, Math.round((freq * P) / (Math.PI * 2)));
+    return Math.sin((n * Math.PI * 2 * t) / P + phase);
+  }
+
+  // Prepare a seamless loop: drop every transition and random state so the character
+  // is a pure function of animation time. clipDur is the clip length in animation seconds.
+  beginLoop(st, clipDur) {
+    this.setAnim(st.anim);
+    this.blendT = 1;
+    const E = EMOTIONS[st.emotion] || EMOTIONS.neutral;
+    for (const k of FACE_KEYS) this.face[k] = E[k] ?? 0;
+    const P = newPose(); computePose(st.anim, 0, P);
+    this.eyeModes = (P.forceEyes ? [P.forceEyes, P.forceEyes] : E.eyes).slice();
+    this.pendingModes = null; this.blinkT = -1;
+    this.ptr.x = this.ptr.y = 0;
+    this.loopClip = { dur: clipDur };
+    this.clearParticles();
+  }
+  endLoop() { this.loopClip = null; this.blinkClock = 0; }
+
   setAnim(name) {
     if (this.anim === name) return;
     if (this.anim !== null) {
@@ -596,6 +622,7 @@ export class Character {
     this.setAnim(st.anim);
     this.time += dt * st.speed;
     const t = this.time;
+    this.period = (ANIMS[st.anim] || ANIMS.idle).period;
     const P = newPose();
     computePose(st.anim, t, P);
 
@@ -628,9 +655,20 @@ export class Character {
     const want = P.forceEyes ? [P.forceEyes, P.forceEyes] : E.eyes;
     if ((want[0] !== this.eyeModes[0] || want[1] !== this.eyeModes[1]) && !this.pendingModes) this.pendingModes = want.slice();
     this.blinkClock += realDt;
-    if (this.blinkT < 0 && (this.pendingModes || (st.blink && this.blinkClock > this.nextBlink))) this.blinkT = 0;
     let blinkK = 1;
-    if (this.blinkT >= 0) {
+    if (this.loopClip) {
+      // loop export: blinks at fixed points of the clip instead of random moments
+      if (st.blink) {
+        const D = this.loopClip.dur, half = 0.085 * st.speed;
+        const at = D > 5 ? [0.3, 0.78] : [0.4];
+        const u = ((t % D) + D) % D;
+        for (const f of at) {
+          const d = Math.abs(u - f * D);
+          if (d < half) blinkK = Math.min(blinkK, d / half);
+        }
+      }
+    } else if (this.blinkT < 0 && (this.pendingModes || (st.blink && this.blinkClock > this.nextBlink))) this.blinkT = 0;
+    if (!this.loopClip && this.blinkT >= 0) {
       this.blinkT += realDt;
       const ph = this.blinkT / 0.17;
       if (ph >= 0.5 && this.pendingModes) { this.eyeModes = this.pendingModes; this.pendingModes = null; }
@@ -669,11 +707,11 @@ export class Character {
       j.v += ((target - j.a) * 160 - j.v * 10) * dt;
       j.a += j.v * dt;
       j.obj.rotation.x = j.a * 0.8;
-      j.obj.rotation.z = -j.a * 0.4 + Math.sin(t * 2.1) * 0.03;
+      j.obj.rotation.z = -j.a * 0.4 + this.lsin(t, 2.1) * 0.03;
     }
-    if (this.halo) this.halo.position.y = this.haloY + Math.sin(t * 2.2) * 0.03;
+    if (this.halo) this.halo.position.y = this.haloY + this.lsin(t, 2.2) * 0.03;
 
-    this.updateParticles(realDt, P.fx || E.fx);
+    this.updateParticles(t, P.fx || E.fx);
   }
 
   updateEyes(st, c, open, t) {
@@ -686,7 +724,7 @@ export class Character {
       for (const k in e.modes) e.modes[k].visible = !e.none && k === mode;
       const sc = this.face.scale;
       if (mode === 'base') e.g.scale.set(sc, sc * Math.max(0.06, this.face.open * open), sc);
-      else if (mode === 'heart') e.g.scale.setScalar(1 + 0.1 * Math.sin(t * 9));
+      else if (mode === 'heart') e.g.scale.setScalar(1 + 0.1 * this.lsin(t, 9));
       else e.g.scale.set(1, Math.max(0.15, open), 1);
       if (e.pupil) e.pupil.position.set(c.lookX * 0.045 * s, c.lookY * 0.04 * s, 0.058 * s);
     }
@@ -754,7 +792,8 @@ export class Character {
   updateTear(E, t) {
     if (!E.tear) { this.tear.visible = false; return; }
     const L = this.L;
-    const ph = (t * 0.45) % 1;
+    const n = Math.max(1, Math.round(this.period / 2.2)); // tear cycles per loop
+    const ph = (((t / this.period) * n) % 1 + 1) % 1;
     const hit = this.surf.frontSafe(L.eyeDX + 0.04 * L.es, L.eyeY - 0.08 * L.es - ph * 0.32);
     placeOnSurface(this.tear, hit, 0.02 + this.faceOff);
     const a = ph < 0.15 ? ph / 0.15 : ph > 0.8 ? (1 - ph) / 0.2 : 1;
@@ -762,34 +801,39 @@ export class Character {
     this.tear.visible = true;
   }
 
-  updateParticles(dt, type) {
-    this.fxTimer += dt;
-    if (type && this.fxTimer > 0.5) {
-      this.fxTimer = 0;
-      const tex = fxTextures()[type];
-      const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
-      const sp = new THREE.Sprite(mat);
-      const p = new V3((Math.random() - 0.3) * 0.5, this.box.max.y + 0.05, 0);
-      this.local.localToWorld(p);
-      sp.position.copy(p);
-      sp.userData = { age: 0, life: 2.2, vx: 0.15 + Math.random() * 0.2, ph: Math.random() * 6, s: 0.16 + Math.random() * 0.08 };
-      this.fx.add(sp); this.particles.push(sp);
-    }
-    for (let i = this.particles.length - 1; i >= 0; i--) {
-      const sp = this.particles[i], u = sp.userData;
-      u.age += dt;
-      const k = u.age / u.life;
-      sp.position.y += dt * 0.42;
-      sp.position.x += dt * u.vx + Math.sin(u.age * 3 + u.ph) * 0.003;
+  // Particles are a pure function of animation time: spawn times sit on a grid that divides
+  // the loop period and each particle's randomness depends on its slot in the loop, so the
+  // whole effect repeats exactly every loop.
+  updateParticles(t, type) {
+    if (type !== this.fxType) { this.clearParticles(); this.fxType = type; }
+    if (!type) return;
+    const P = this.period, N = Math.max(1, Math.round(P / 0.5)), step = P / N, life = 2.2;
+    const box = this.box;
+    const x0 = this.root.position.x, y0 = this.baseY + this.legH + (box.max.y - box.min.y) + 0.05, z0 = this.root.position.z;
+    const rnd = (j, k) => { const v = Math.sin((((j % N) + N) % N) * 127.1 + k * 311.7) * 43758.5453; return v - Math.floor(v); };
+    const alive = new Set();
+    for (let j = Math.floor((t - life) / step) + 1; j <= Math.floor(t / step); j++) {
+      const age = t - j * step;
+      if (age < 0 || age >= life) continue;
+      alive.add(j);
+      let sp = this.particles.get(j);
+      if (!sp) {
+        sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: fxTextures()[type], transparent: true, depthWrite: false }));
+        this.fx.add(sp); this.particles.set(j, sp);
+      }
+      const k = age / life, ph = rnd(j, 1) * 6, vx = 0.15 + rnd(j, 2) * 0.2, sc = 0.16 + rnd(j, 3) * 0.08;
+      sp.position.set(x0 + (rnd(j, 4) - 0.3) * 0.5 + vx * age + 0.05 * Math.sin(age * 3 + ph), y0 + 0.42 * age, z0);
       sp.material.opacity = k < 0.15 ? k / 0.15 : Math.max(0, 1 - (k - 0.15) / 0.85);
-      sp.material.rotation = Math.sin(u.age * 2 + u.ph) * 0.3;
-      sp.scale.setScalar(u.s * (0.6 + Math.min(1, k * 3) * 0.6));
-      if (k >= 1) { this.fx.remove(sp); sp.material.dispose(); this.particles.splice(i, 1); }
+      sp.material.rotation = Math.sin(age * 2 + ph) * 0.3;
+      sp.scale.setScalar(sc * (0.6 + Math.min(1, k * 3) * 0.6));
+    }
+    for (const [j, sp] of this.particles) {
+      if (!alive.has(j)) { this.fx.remove(sp); sp.material.dispose(); this.particles.delete(j); }
     }
   }
 
   clearParticles() {
-    for (const sp of this.particles) { this.fx.remove(sp); sp.material.dispose(); }
-    this.particles = [];
+    for (const sp of this.particles.values()) { this.fx.remove(sp); sp.material.dispose(); }
+    this.particles.clear();
   }
 }

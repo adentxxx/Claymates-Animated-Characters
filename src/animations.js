@@ -27,37 +27,42 @@ const TAU = Math.PI * 2;
 const { sin, cos, abs, exp, max } = Math;
 const ease = (x) => x * x * (3 - 2 * x);
 
+// Every animation is periodic: all its motions repeat exactly after `period` seconds
+// (at speed 1), so an exported video loops without a seam.
 export const ANIMS = {
-  idle:   { label: 'Покой',      icon: '🫧' },
-  bounce: { label: 'Прыжки',     icon: '🦘' },
-  wave:   { label: 'Привет',     icon: '👋' },
-  dance:  { label: 'Танец',      icon: '💃' },
-  walk:   { label: 'Шаг',        icon: '🚶' },
-  spin:   { label: 'Кружится',   icon: '🌀' },
-  nod:    { label: 'Да-да',      icon: '🙆' },
-  shake:  { label: 'Не-а',       icon: '🙅' },
-  look:   { label: 'Осмотр',     icon: '👀' },
-  talk:   { label: 'Болтает',    icon: '💬' },
-  cheer:  { label: 'Ура!',       icon: '🙌' },
-  jelly:  { label: 'Желе',       icon: '🍮' },
-  shy:    { label: 'Стесняется', icon: '🙈' },
-  float:  { label: 'Парит',      icon: '🎈' },
-  sleep:  { label: 'Спит',       icon: '💤' },
+  idle:   { label: 'Покой',      icon: '🫧', period: 6 },
+  bounce: { label: 'Прыжки',     icon: '🦘', period: 1 },
+  wave:   { label: 'Привет',     icon: '👋', period: TAU / 1.5 },
+  dance:  { label: 'Танец',      icon: '💃', period: 2 / 1.1 },
+  walk:   { label: 'Шаг',        icon: '🚶', period: 1 / 1.3 },
+  spin:   { label: 'Кружится',   icon: '🌀', period: 1 / 0.55 },
+  nod:    { label: 'Да-да',      icon: '🙆', period: 1 / 1.2 },
+  shake:  { label: 'Не-а',       icon: '🙅', period: 2 },
+  look:   { label: 'Осмотр',     icon: '👀', period: 8 },
+  talk:   { label: 'Болтает',    icon: '💬', period: 4 },
+  cheer:  { label: 'Ура!',       icon: '🙌', period: 1 / 1.5 },
+  jelly:  { label: 'Желе',       icon: '🍮', period: 1.25 },
+  shy:    { label: 'Стесняется', icon: '🙈', period: TAU / 0.8 },
+  float:  { label: 'Парит',      icon: '🎈', period: TAU / 0.8 },
+  sleep:  { label: 'Спит',       icon: '💤', period: TAU / 1.3 },
 };
 
 export function computePose(name, t, p) {
+  const a = ANIMS[name];
+  if (!a) return p;
+  const w = TAU / a.period;          // base angular frequency: use only integer multiples of it
+  const ph = (t / a.period) % 1;     // 0..1 phase within the loop
   switch (name) {
     case 'idle': {
-      const b = sin(t * 2.2);
+      const b = sin(2 * w * t);
       p.squash = 1 + 0.025 * b;
-      p.pz = 0.03 * sin(t * 1.1);
+      p.pz = 0.03 * sin(w * t);
       p.aZ = 0.08 * b; p.bZ = 0.08 * b;
       p.aE = 0.15; p.bE = 0.15;
-      p.lookX = 0.35 * sin(t * 0.45); p.lookY = 0.1 * sin(t * 0.7);
+      p.lookX = 0.35 * sin(w * t + 0.8); p.lookY = 0.1 * cos(w * t);
       break;
     }
     case 'bounce': {
-      const ph = (t * 1.05) % 1;
       if (ph < 0.2) { const k = ease(ph / 0.2); p.squash = 1 - 0.2 * k; p.aZ = p.bZ = -0.1 * k; }
       else if (ph < 0.72) {
         const k = (ph - 0.2) / 0.52;
@@ -68,24 +73,24 @@ export function computePose(name, t, p) {
         p.mouth = 0.25 * sin(k * Math.PI);
       } else {
         const k = (ph - 0.72) / 0.28;
-        p.squash = 1 - 0.22 * exp(-k * 5) * cos(k * 13);
+        p.squash = 1 - 0.22 * exp(-k * 5) * cos(k * 13) * (1 - k); // settles to rest by the loop end
       }
       break;
     }
     case 'wave': {
-      p.aZ = 1.85 + 0.1 * sin(t * 3);
-      p.aE = 0.7 + 0.55 * sin(t * 9);
+      p.aZ = 1.85 + 0.1 * sin(2 * w * t);
+      p.aE = 0.7 + 0.55 * sin(6 * w * t);
       p.bZ = 0.1;
-      p.pz = -0.07 + 0.03 * sin(t * 4.5);
-      p.squash = 1 + 0.02 * sin(t * 9);
+      p.pz = -0.07 + 0.03 * sin(3 * w * t);
+      p.squash = 1 + 0.02 * sin(6 * w * t);
       p.lookX = 0.15;
       break;
     }
     case 'dance': {
-      const f = t * TAU * 1.1;
+      const f = 2 * w * t;
       const b = sin(f);
       p.pz = 0.18 * b;
-      p.rootRotY = 0.35 * sin(f * 0.5);
+      p.rootRotY = 0.35 * sin(w * t);
       p.rootY = 0.08 * abs(sin(f));
       p.squash = 1 - 0.07 * abs(b);
       p.aZ = 1.3 + 0.9 * sin(f); p.bZ = 1.3 - 0.9 * sin(f);
@@ -96,7 +101,7 @@ export function computePose(name, t, p) {
       break;
     }
     case 'walk': {
-      const f = t * TAU * 1.3;
+      const f = w * t;
       p.lA = 0.55 * sin(f); p.lB = -0.55 * sin(f);
       p.aX = -0.55 * sin(f); p.bX = 0.55 * sin(f);
       p.aE = 0.25; p.bE = 0.25;
@@ -107,47 +112,46 @@ export function computePose(name, t, p) {
       break;
     }
     case 'spin': {
-      const ph = (t * 0.55) % 1;
       const k = ph < 0.75 ? ease(ph / 0.75) : 1;
       p.rootRotY = k * TAU;
       p.rootY = 0.3 * sin(Math.min(ph / 0.75, 1) * Math.PI);
       p.aZ = p.bZ = 1.1 * sin(Math.min(ph / 0.75, 1) * Math.PI);
       p.squash = 1 + 0.06 * sin(Math.min(ph / 0.75, 1) * Math.PI);
-      if (ph > 0.75) p.squash = 1 - 0.12 * exp(-(ph - 0.75) * 18) * cos((ph - 0.75) * 50);
+      if (ph > 0.75) { const q = (ph - 0.75) / 0.25; p.squash = 1 - 0.12 * exp(-q * 4.5) * cos(q * 12.5) * (1 - q); }
       break;
     }
     case 'nod': {
-      const n = max(0, sin(t * TAU * 1.2));
+      const n = max(0, sin(w * t));
       p.px = 0.2 * n;
       p.squash = 1 - 0.04 * n;
       p.lookY = -0.4 * n;
       break;
     }
     case 'shake': {
-      const env = 0.6 + 0.4 * sin(t * 1.3);
-      p.py = 0.35 * sin(t * TAU * 1.5) * env;
-      p.lookX = -0.6 * sin(t * TAU * 1.5 - 0.6);
-      p.squash = 1 + 0.02 * sin(t * TAU * 3);
+      const env = 0.6 + 0.4 * sin(w * t);
+      p.py = 0.35 * sin(3 * w * t) * env;
+      p.lookX = -0.6 * sin(3 * w * t - 0.6);
+      p.squash = 1 + 0.02 * sin(6 * w * t);
       break;
     }
     case 'look': {
-      p.rootRotY = 0.5 * sin(t * 0.9);
-      p.lookX = sin(t * 0.9 + 0.6);
-      p.lookY = 0.35 * sin(t * 0.45);
-      p.pz = -0.04 * sin(t * 0.9);
-      p.squash = 1 + 0.02 * sin(t * 2);
+      p.rootRotY = 0.5 * sin(w * t);
+      p.lookX = sin(w * t + 0.6);
+      p.lookY = 0.35 * sin(2 * w * t);
+      p.pz = -0.04 * sin(w * t);
+      p.squash = 1 + 0.02 * sin(3 * w * t);
       break;
     }
     case 'talk': {
-      p.mouth = 0.45 * (0.5 + 0.5 * sin(t * 15)) * (0.55 + 0.45 * sin(t * 3.1));
-      p.aX = -0.7 - 0.3 * sin(t * 2.5); p.aZ = 0.3 + 0.2 * sin(t * 2.5); p.aE = 1.0;
-      p.pz = 0.04 * sin(t * 2.2);
-      p.squash = 1 + 0.025 * sin(t * 7.5);
-      p.lookX = 0.2 * sin(t * 0.7);
+      p.mouth = 0.45 * (0.5 + 0.5 * sin(10 * w * t)) * (0.55 + 0.45 * sin(2 * w * t));
+      p.aX = -0.7 - 0.3 * sin(2 * w * t); p.aZ = 0.3 + 0.2 * sin(2 * w * t); p.aE = 1.0;
+      p.pz = 0.04 * sin(w * t);
+      p.squash = 1 + 0.025 * sin(5 * w * t);
+      p.lookX = 0.2 * sin(w * t);
       break;
     }
     case 'cheer': {
-      const f = t * TAU * 1.5;
+      const f = w * t;
       p.aZ = p.bZ = 2.0 + 0.25 * sin(f * 2);
       p.aE = p.bE = 0.2 * sin(f * 2);
       p.rootY = 0.22 * abs(sin(f));
@@ -157,35 +161,34 @@ export function computePose(name, t, p) {
       break;
     }
     case 'jelly': {
-      const ph = (t * 0.8) % 1;
-      const d = exp(-ph * 4);
+      const d = exp(-ph * 4) * (1 - ph); // fully settled when the loop wraps
       p.squash = 1 + 0.24 * d * sin(ph * 30);
       p.pz = 0.09 * d * sin(ph * 22);
       p.aZ = p.bZ = 0.3 * d * sin(ph * 30);
       break;
     }
     case 'shy': {
-      p.pz = 0.08 * sin(t * 1.6);
+      p.pz = 0.08 * sin(2 * w * t);
       p.px = 0.1;
-      p.lookY = -0.6; p.lookX = 0.45 * sin(t * 0.8);
+      p.lookY = -0.6; p.lookX = 0.45 * sin(w * t);
       p.aX = p.bX = -0.8; p.aZ = p.bZ = -0.45; p.aE = p.bE = 0.7;
       p.blush = 0.8;
-      p.squash = 1 + 0.02 * sin(t * 3);
+      p.squash = 1 + 0.02 * sin(4 * w * t);
       break;
     }
     case 'float': {
-      p.rootY = 0.35 + 0.1 * sin(t * 1.6);
-      p.lA = 0.25 * sin(t * 1.6 + 1); p.lB = 0.25 * sin(t * 1.6 + 2);
-      p.aZ = p.bZ = 0.9 + 0.15 * sin(t * 1.6 + 0.5);
-      p.pz = 0.06 * sin(t * 0.8);
-      p.squash = 1 + 0.03 * sin(t * 1.6 + 1.2);
+      p.rootY = 0.35 + 0.1 * sin(2 * w * t);
+      p.lA = 0.25 * sin(2 * w * t + 1); p.lB = 0.25 * sin(2 * w * t + 2);
+      p.aZ = p.bZ = 0.9 + 0.15 * sin(2 * w * t + 0.5);
+      p.pz = 0.06 * sin(w * t);
+      p.squash = 1 + 0.03 * sin(2 * w * t + 1.2);
       break;
     }
     case 'sleep': {
-      p.squash = 1 + 0.04 * sin(t * 1.3);
+      p.squash = 1 + 0.04 * sin(w * t);
       p.pz = 0.12; p.px = 0.08;
       p.forceEyes = 'sleep';
-      p.mouth = 0.12 + 0.06 * sin(t * 1.3);
+      p.mouth = 0.12 + 0.06 * sin(w * t);
       p.fx = 'z';
       break;
     }
