@@ -140,6 +140,7 @@ export class Character {
 
   applyMaterial(st) {
     const kind = normalizeMaterial(st.material);
+    this.kind = kind;
     for (const m of [this.bodyMat, this.limbMat, this.partMat]) m && m.dispose();
     for (const s of [...this.furGroup.children, ...this.core.children]) s.material.dispose();
     if (this.glowShell.material && this.glowShell.material.dispose) this.glowShell.material.dispose();
@@ -181,6 +182,22 @@ export class Character {
     };
     this.parts.traverse(fix);
     this.legGroup.traverse(fix);
+    this.syncTransmission();
+  }
+
+  // A transmissive (glass) body refracts every opaque object around it, which shows a mirrored
+  // second copy of the face, limbs and accessories on the glass. three.js leaves transparent
+  // objects out of that refraction pass, so for glass the extra parts are flagged transparent.
+  syncTransmission() {
+    const glass = this.kind === 'glass';
+    const visit = (o) => {
+      if (!o.isMesh || !o.material) return;
+      const m = o.material;
+      const want = glass || m.opacity < 1;
+      if (m.transparent !== want) { m.transparent = want; m.needsUpdate = true; }
+    };
+    this.parts.traverse(visit);
+    this.legGroup.traverse(visit);
   }
 
   limbMesh(geo) { const m = mesh(geo, this.limbMat); m.userData.mat = 'limb'; return m; }
@@ -206,6 +223,7 @@ export class Character {
     this.buildLegs(st);
     this.buildAccessories(st);
     this.mouthKey = '';
+    this.syncTransmission();
   }
 
   buildEyes(st) {
