@@ -1,7 +1,7 @@
 import { SHAPES } from './sdf.js';
 import { MATERIALS } from './materials.js';
 import { EMOTIONS, ANIMS } from './animations.js';
-import { PALETTE, BG_PALETTE, PRESETS } from './presets.js';
+import { PALETTE, PRESETS } from './presets.js';
 
 const SHAPE_ICONS = {
   ball: '<circle cx="20" cy="21" r="14"/>',
@@ -69,10 +69,7 @@ export const TABS = [
     { key: 'glassColor', type: 'color', label: 'Цвет оправы', palette: PALETTE, showIf: (s) => s.eyewear !== 'none' },
     { key: 'accSize', type: 'slider', label: 'Размер аксессуаров', min: 0.5, max: 1.8, step: 0.01 },
   ] },
-  { id: 'scene', label: 'Сцена', controls: [
-    { key: 'bg', type: 'color', label: 'Фон', palette: BG_PALETTE },
-    { key: 'pedestal', type: 'toggle', label: 'Подставка' },
-    { key: 'autoRotate', type: 'toggle', label: 'Вращать камеру' },
+  { id: 'scene', label: 'Поведение', controls: [
     { key: 'follow', type: 'toggle', label: 'Следить за курсором' },
     { key: 'blink', type: 'toggle', label: 'Моргать' },
     { key: 'speed', type: 'slider', label: 'Скорость анимации', min: 0.2, max: 2.5, step: 0.01 },

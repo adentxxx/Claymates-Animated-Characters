@@ -12,10 +12,8 @@ const wrapPi = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 const ease = (x) => x * x * (3 - 2 * x);
 const FACE_KEYS = ['open', 'scale', 'brow', 'browLift', 'c', 'mo', 'w', 'smirk', 'wavy', 'tongue', 'blush'];
 
-function mesh(geo, mat, shadow = true) {
-  const m = new THREE.Mesh(geo, mat);
-  m.castShadow = shadow;
-  return m;
+function mesh(geo, mat) {
+  return new THREE.Mesh(geo, mat);
 }
 function placeOnSurface(obj, hit, off = 0) {
   obj.position.copy(hit.p).addScaledVector(hit.n, off);
@@ -80,7 +78,6 @@ export class Character {
     this.local = new THREE.Group(); this.squash.add(this.local);
     this.legGroup = new THREE.Group(); this.root.add(this.legGroup);
     this.bodyMesh = new THREE.Mesh(new THREE.BufferGeometry());
-    this.bodyMesh.castShadow = true; this.bodyMesh.receiveShadow = true;
     this.local.add(this.bodyMesh);
     this.furGroup = new THREE.Group(); this.local.add(this.furGroup);
     this.core = new THREE.Group(); this.local.add(this.core);       // fluffy filling inside glass
@@ -174,7 +171,6 @@ export class Character {
     this.fm.mouth.color.copy(kind === 'glow' ? ink : new THREE.Color(0x3b1422));
     this.fm.black.transparent = kind === 'glow'; this.fm.black.opacity = kind === 'glow' ? 0.85 : 1;
 
-    this.bodyMesh.castShadow = kind !== 'glow';
     if (this.box) this.syncBounds(geo);
     const fix = (o) => {
       if (o.userData.mat === 'limb') o.material = this.limbMat;

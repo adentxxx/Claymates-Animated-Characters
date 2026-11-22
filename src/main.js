@@ -29,8 +29,6 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true,
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.toneMapping = THREE.NeutralToneMapping;
 renderer.toneMappingExposure = 1.05;
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
 const pmrem = new THREE.PMREMGenerator(renderer);
@@ -46,37 +44,16 @@ controls.enablePan = false;
 controls.minDistance = 2.6;
 controls.maxDistance = 11;
 controls.maxPolarAngle = Math.PI * 0.53;
-controls.autoRotateSpeed = 1.6;
 
 const hemi = new THREE.HemisphereLight(0xffffff, 0xd6d0e6, 1.1);
 scene.add(hemi);
 const key = new THREE.DirectionalLight(0xffffff, 2.2);
 key.position.set(2.5, 5, 3.5);
-key.castShadow = true;
-key.shadow.mapSize.set(2048, 2048);
-key.shadow.camera.left = -3; key.shadow.camera.right = 3; key.shadow.camera.top = 4; key.shadow.camera.bottom = -2;
-key.shadow.bias = -0.0004; key.shadow.normalBias = 0.02;
-key.shadow.radius = 6;
 scene.add(key);
 const rim = new THREE.DirectionalLight(0xdfe6ff, 1.4);
 rim.position.set(-3, 3, -3);
 scene.add(rim);
 
-const ground = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.ShadowMaterial({ opacity: 0.16 }));
-ground.rotation.x = -Math.PI / 2;
-ground.receiveShadow = true;
-scene.add(ground);
-
-const pedestal = new THREE.Group();
-{
-  const mat = new THREE.MeshPhysicalMaterial({ color: 0xf6f6f8, roughness: 0.35, clearcoat: 0.6 });
-  const cyl = new THREE.Mesh(new THREE.CylinderGeometry(1.25, 1.25, 0.22, 96), mat);
-  cyl.position.y = 0.11; cyl.castShadow = true; cyl.receiveShadow = true;
-  const line = new THREE.Mesh(new THREE.TorusGeometry(1.25, 0.012, 8, 96), mat);
-  line.rotation.x = Math.PI / 2; line.position.y = 0.22;
-  pedestal.add(cyl, line);
-}
-scene.add(pedestal);
 
 const hero = new Character();
 scene.add(hero.root, hero.fx);
@@ -85,7 +62,7 @@ scene.add(hero.root, hero.fx);
 const MESH_KEYS = new Set(['shape', 'width', 'height', 'depth', 'taper', 'lean', 'wobble', 'seed']);
 const MAT_KEYS = new Set(['color', 'color2', 'material', 'limbSame', 'limbColor', 'filling']);
 const RUNTIME_KEYS = new Set(['emotion', 'anim', 'speed', 'blink', 'follow']);
-const SCENE_KEYS = new Set(['bg', 'pedestal', 'autoRotate']);
+const SCENE_KEYS = new Set();
 const pending = { mesh: null, mat: false, parts: false, scene: false };
 
 function onChange(k, live) {
@@ -106,32 +83,20 @@ function flush() {
   if (pending.parts) { hero.buildParts(state); pending.parts = false; frameCharacter(); }
   if (pending.scene) { applyScene(); pending.scene = false; }
 }
-// background is rendered inside WebGL so glass / glow materials can refract it
+// Fixed on-screen background, rendered inside WebGL so glass / glow can refract it.
+// Exports (PNG and video) always drop it and come out with a transparent background.
+const BG = '#eef0f6';
 const bgCanvas = document.createElement('canvas'); bgCanvas.width = bgCanvas.height = 512;
 const bgTex = new THREE.CanvasTexture(bgCanvas); bgTex.colorSpace = THREE.SRGBColorSpace;
-function paintBackground(dark) {
+{
   const g = bgCanvas.getContext('2d');
-  const base = new THREE.Color(state.bg);
-  const inner = base.clone().lerp(new THREE.Color(0xffffff), dark ? 0.08 : 0.55);
-  const outer = base.clone().lerp(new THREE.Color(0x000000), dark ? 0.3 : 0.06);
   const gr = g.createRadialGradient(256, 200, 0, 256, 200, 380);
-  gr.addColorStop(0, '#' + inner.getHexString()); gr.addColorStop(0.55, '#' + base.getHexString()); gr.addColorStop(1, '#' + outer.getHexString());
+  gr.addColorStop(0, '#fbfbfe'); gr.addColorStop(0.55, BG); gr.addColorStop(1, '#e1e3eb');
   g.fillStyle = gr; g.fillRect(0, 0, 512, 512);
-  bgTex.needsUpdate = true;
-  scene.background = bgTex;
 }
+scene.background = bgTex;
 function applyScene() {
-  stage.style.setProperty('--bg', state.bg);
-  const dark = new THREE.Color(state.bg).getHSL({}).l < 0.4;
-  paintBackground(dark);
-  stage.classList.toggle('dark', dark);
-  document.body.classList.toggle('dark-stage', dark);
-  ground.material.opacity = dark ? 0.35 : 0.16;
-  hemi.groundColor.set(dark ? 0x30304a : 0xd6d0e6);
-  pedestal.visible = state.pedestal;
-  hero.baseY = state.pedestal ? 0.22 : 0;
-  if (hero.box) frameCharacter();
-  controls.autoRotate = state.autoRotate;
+  hero.baseY = 0;
 }
 function rebuildAll() {
   hero.buildBody(state, 'high');
@@ -211,17 +176,21 @@ document.getElementById('btn-video').onclick = () => {
   recording = true;
   const btn = document.getElementById('btn-video');
   btn.classList.add('rec');
-  const type = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'].find((t) => MediaRecorder.isTypeSupported(t));
+  // WebM VP9/VP8 keep the alpha channel; MP4 cannot, so it is not offered
+  const type = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find((t) => MediaRecorder.isTypeSupported(t));
+  if (!type) { recording = false; btn.classList.remove('rec'); toast('Браузер не умеет записывать WebM'); return; }
+  scene.background = null; // transparent video
   const rec = new MediaRecorder(canvas.captureStream(60), { mimeType: type, videoBitsPerSecond: 10e6 });
   const chunks = [];
   rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
   rec.onstop = () => {
+    scene.background = bgTex;
     recording = false; btn.classList.remove('rec');
-    download(new Blob(chunks, { type }), type.includes('mp4') ? 'claymate.mp4' : 'claymate.webm');
-    toast('Видео готово');
+    download(new Blob(chunks, { type }), 'claymate.webm');
+    toast('Видео с прозрачным фоном готово');
   };
   rec.start();
-  toast('Записываю 4 секунды…');
+  toast('Записываю 4 секунды с прозрачным фоном…');
   setTimeout(() => rec.stop(), 4000);
 };
 document.getElementById('btn-link').onclick = async () => {
@@ -269,4 +238,4 @@ function frame() {
 }
 frame();
 
-window.__claymates = { state, hero, renderer };
+window.__claymates = { state, hero, renderer, scene, camera };
