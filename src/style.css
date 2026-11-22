@@ -34,14 +34,14 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 #c { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 
 /* action menu that opens from the download icon in the stage tab bar */
-.xp { position: absolute; right: 0; bottom: 0; }
+.xp { position: absolute; left: 50%; bottom: 0; } /* menu centred on the tab bar */
 .xp svg { flex: none; width: 18px; height: 18px; }
 .xp-opt b { font-size: 13px; font-weight: 700; letter-spacing: -.01em; white-space: nowrap; }
 
 .xp-menu {
-  position: absolute; right: 0; bottom: 64px; width: 240px; height: 0; padding: 6px; border-radius: 16px; overflow: hidden; z-index: 7;
+  position: absolute; left: -120px; bottom: 64px; width: 240px; height: 0; padding: 6px; border-radius: 16px; overflow: hidden; z-index: 7;
   background: rgba(255,255,255,.96); backdrop-filter: blur(16px); border: var(--float-edge); box-shadow: var(--float-shadow);
-  transform-origin: 100% 100%; visibility: hidden; will-change: transform, height, opacity;
+  transform-origin: 50% 100%; visibility: hidden; will-change: transform, height, opacity;
 }
 .xp-inner { position: absolute; left: 6px; right: 6px; top: 6px; }
 /* opening upwards: content sticks to the bottom edge, next to the button */
