@@ -238,6 +238,17 @@ export function createFurShells(color, count = 16, length = 0.065) {
   return mats;
 }
 
+// radial falloff used as the blush alpha (green channel), fully transparent at the rim
+function blushAlpha() {
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const g = c.getContext('2d');
+  const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  gr.addColorStop(0, '#fff'); gr.addColorStop(0.35, 'rgba(255,255,255,.85)'); gr.addColorStop(0.7, 'rgba(255,255,255,.3)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = '#000'; g.fillRect(0, 0, 128, 128);
+  g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+  return new THREE.CanvasTexture(c);
+}
+
 /* Face & accessory materials */
 export function createFaceMaterials() {
   return {
@@ -247,7 +258,11 @@ export function createFaceMaterials() {
     mouth: new THREE.MeshStandardMaterial({ color: 0x3b1422, roughness: 0.55, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
     tongue: new THREE.MeshPhysicalMaterial({ color: 0xff6f8e, roughness: 0.45, clearcoat: 0.5 }),
     pink: new THREE.MeshPhysicalMaterial({ color: 0xff3d6e, roughness: 0.25, clearcoat: 1, clearcoatRoughness: 0.1 }),
-    blush: new THREE.MeshStandardMaterial({ color: 0xff6f9c, roughness: 1, transparent: true, opacity: 0.5, depthWrite: false }),
+    // painted-on blush: soft red spot with a blurred edge (alpha from a radial gradient)
+    blush: new THREE.MeshStandardMaterial({
+      color: 0xff2e4d, roughness: 1, transparent: true, opacity: 0.6, alphaMap: blushAlpha(), depthWrite: false,
+      polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4,
+    }),
     tear: new THREE.MeshPhysicalMaterial({ color: 0x8fd3ff, roughness: 0.05, clearcoat: 1, transparent: true, opacity: 0.85 }),
   };
 }
