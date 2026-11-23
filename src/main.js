@@ -216,8 +216,14 @@ const exportMenu = createActionMenu(document.getElementById('export-menu'), [
   { id: 'png', label: 'Скачать PNG', icon: ICON.png },
   { id: 'video', label: 'Скачать видео', icon: ICON.video },
   { id: 'link', label: 'Скопировать ссылку', icon: ICON.link },
-  { id: 'embed', label: 'Экспортировать код', icon: ICON.embed },
+  { id: 'embed', label: 'Экспортировать код', icon: ICON.embed, soon: true }, // enabled once the site is published
 ], { trigger: stageBar.actionEl, up: true, onRun: (id) => ({ png: exportPNG, video: exportVideo, link: copyLink, embed: () => embedModal.open() })[id]() });
+// "i" in the corner: hover shows the tooltip; on touch screens a tap toggles it
+const about = document.querySelector('.about');
+about.querySelector('.about-btn').addEventListener('click', () => about.classList.toggle('open'));
+addEventListener('pointerdown', (e) => { if (!about.contains(e.target)) about.classList.remove('open'); });
+about.addEventListener('keydown', (e) => { if (e.key === 'Escape') { about.classList.remove('open'); document.activeElement.blur(); } });
+
 const embedModal = createEmbedModal({
   getUrl: () => `${location.origin}${location.pathname}?embed#${encodeState()}`,
   getTitle: () => 'Claymates — анимированный персонаж',

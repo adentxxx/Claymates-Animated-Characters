@@ -18,7 +18,7 @@ export function createActionMenu(root, items, { trigger, onRun, up = true }) {
   root.innerHTML = `
     <div class="xp-menu${up ? ' up' : ''}" role="menu" aria-label="Скачать"><div class="xp-inner">
       <i class="xp-hl"></i>
-      ${items.map((it, i) => `<div class="xp-opt" role="menuitem" id="xp-o${i}">${svg(it.icon)}<b>${it.label}</b></div>`).join('')}
+      ${items.map((it, i) => `<div class="xp-opt${it.soon ? ' xp-off' : ''}" role="menuitem" id="xp-o${i}"${it.soon ? ' aria-disabled="true"' : ''}>${svg(it.icon)}<b>${it.label}</b>${it.soon ? '<em>скоро</em>' : ''}</div>`).join('')}
     </div></div>`;
   const q = (s) => root.querySelector(s);
   const menu = q('.xp-menu'), hl = q('.xp-hl');
@@ -31,8 +31,9 @@ export function createActionMenu(root, items, { trigger, onRun, up = true }) {
   const timers = [];
   const after = (sec, fn) => { timers.push({ t: sec, fn }); wake(); };
 
+  const off = (i) => !!items[i].soon; // "скоро": shown but not available yet
   function hover(i, snap) {
-    if (i === hov || i < 0 || i >= opts.length) return;
+    if (i === hov || i < 0 || i >= opts.length || off(i)) return;
     const top = PAD + i * ROW;
     if (snap || hov < 0) { HT.x = HT.t = top; HB.x = HB.t = top + ROW; HT.v = HB.v = 0; }
     else {
@@ -57,6 +58,7 @@ export function createActionMenu(root, items, { trigger, onRun, up = true }) {
     wake();
   }
   function pick(i) {
+    if (off(i)) return;
     after(0.12, () => setOpen(false));
     onRun(items[i].id);
   }
@@ -75,7 +77,12 @@ export function createActionMenu(root, items, { trigger, onRun, up = true }) {
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
       if (!open) { setOpen(true); hover(up ? opts.length - 1 : 0, true); }
-      else hover(hov < 0 ? 0 : hov + (e.key === 'ArrowDown' ? 1 : -1));
+      else { // step over rows that are not available yet
+        const d = e.key === 'ArrowDown' ? 1 : -1;
+        let i = hov < 0 ? 0 : hov + d;
+        while (i >= 0 && i < opts.length && off(i)) i += d;
+        hover(i);
+      }
     } else if (e.key === 'Enter' && open && hov > -1) { e.preventDefault(); pick(hov); }
     else if (e.key === 'Escape' && open) { setOpen(false); }
   });
