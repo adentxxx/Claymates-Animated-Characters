@@ -182,8 +182,7 @@ body.panel-open #panel { width: var(--panel-w); }
 .ctl-toggle { display: flex; align-items: center; justify-content: space-between; }
 .ctl-toggle .lbl { margin: 0; color: var(--ink); font-size: 13.5px; }
 
-.shape-grid { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-.shape-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.shape-grid { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; } /* every icon grid: 3 columns */
 .shape-btn {
   display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 2px 9px; border-radius: 14px;
   font-size: 11.5px; font-weight: 600; color: var(--muted); transition: background .15s, box-shadow .15s, color .15s;

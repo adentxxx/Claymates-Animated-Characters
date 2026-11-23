@@ -71,7 +71,7 @@ const TABS = [
     { key: 'wobble', type: 'slider', label: 'Ручная лепка', min: 0, max: 1.2, step: 0.01, mesh: true },
   ] },
   { id: 'emotion', label: 'Эмоция', controls: [
-    { key: 'emotion', type: 'iconGrid', cols: 3, options: Object.entries(EMOTIONS).map(([v, e]) => ({ v, label: e.label, icon: FACE_BASE + (FACES[v] || '') })) },
+    { key: 'emotion', type: 'iconGrid', options: Object.entries(EMOTIONS).map(([v, e]) => ({ v, label: e.label, icon: FACE_BASE + (FACES[v] || '') })) },
   ] },
   { id: 'material', label: 'Материал', controls: [
     { key: 'material', type: 'choice', label: 'Фактура', options: Object.entries(MATERIALS).map(([v, m]) => ({ v, label: m.label })) },
@@ -121,7 +121,7 @@ const TABS = [
 
 const ANIM_TABS = [
   { id: 'motion', label: 'Анимация', controls: [
-    { key: 'anim', type: 'iconGrid', cols: 3, options: Object.entries(ANIMS).map(([v, a]) => ({ v, label: a.label, icon: ANIM_ICONS[v] || '' })) },
+    { key: 'anim', type: 'iconGrid', options: Object.entries(ANIMS).map(([v, a]) => ({ v, label: a.label, icon: ANIM_ICONS[v] || '' })) },
     { key: 'speed', type: 'slider', label: 'Скорость анимации', min: 0.2, max: 2.5, step: 0.05, format: (v) => v.toFixed(2).replace(/0$/, '').replace('.', ',') + '×' },
     { key: 'follow', type: 'toggle', label: 'Следить за курсором' },
     { key: 'blink', type: 'toggle', label: 'Моргать' },
@@ -221,7 +221,7 @@ export function createUI({ state, onChange, onPreset, onRandom }) {
       }
       case 'iconGrid': {
         // same tiles as the shape grid: icon + caption; the "off" option is icon only
-        const grid = h('div', 'shape-grid' + (c.cols ? ' cols-' + c.cols : ''));
+        const grid = h('div', 'shape-grid');
         for (const o of c.options) {
           const off = o.v === 'none' || o.v === 'off';
           const b = h('button', 'shape-btn' + (off ? ' tile-off' : ''), `<svg viewBox="0 0 40 40">${o.icon}</svg>${off ? '' : `<span>${o.label}</span>`}`);
