@@ -5,6 +5,7 @@ import { Character } from './character.js';
 import { createUI, STAGES } from './ui.js';
 import { createStageBar } from './stagebar.js';
 import { createActionMenu } from './exportmenu.js';
+import { createEmbedModal } from './embedmodal.js';
 import { DEFAULTS, PRESETS, PALETTE, presetState } from './presets.js';
 import { SHAPES } from './sdf.js';
 import { normalizeMaterial } from './materials.js';
@@ -22,6 +23,9 @@ function loadFromHash() {
   return null;
 }
 const state = loadFromHash() || presetState(0); // opens with the first preset (Кубик)
+// embed mode (?embed): only the character, transparent background — used by the <iframe> code
+const EMBED = new URLSearchParams(location.search).has('embed');
+if (EMBED) document.body.classList.add('embed');
 state.material = normalizeMaterial(state.material);
 
 /* ---------------- renderer & scene ---------------- */
@@ -43,6 +47,7 @@ const controls = new OrbitControls(camera, canvas);
 controls.target.set(0, 0.78, 0);
 controls.enableDamping = true;
 controls.enablePan = false;
+if (EMBED) controls.enableZoom = false; // the wheel must keep scrolling the host page
 controls.minDistance = 2.6;
 controls.maxDistance = 11;
 controls.maxPolarAngle = Math.PI * 0.53;
@@ -96,7 +101,8 @@ const bgTex = new THREE.CanvasTexture(bgCanvas); bgTex.colorSpace = THREE.SRGBCo
   gr.addColorStop(0, '#fbfbfe'); gr.addColorStop(0.55, BG); gr.addColorStop(1, '#e1e3eb');
   g.fillStyle = gr; g.fillRect(0, 0, 512, 512);
 }
-scene.background = bgTex;
+const SITE_BG = EMBED ? null : bgTex; // embeds stay transparent
+scene.background = SITE_BG;
 function applyScene() {
   hero.baseY = 0;
 }
@@ -110,6 +116,17 @@ function rebuildAll() {
 // keep the whole character in view (slightly above the bottom dock)
 function frameCharacter() {
   const b = hero.box;
+  if (EMBED) {
+    // small square frame: fit the whole character (headwear and arms included) with a margin
+    const H = hero.baseY + hero.legH + (b.max.y - b.min.y) + (state.head !== 'none' ? 0.45 * state.accSize : 0);
+    const W = (b.max.x - b.min.x) + (state.arms !== 'none' ? 0.7 * state.armLength : 0.2);
+    const half = Math.max(H, W / Math.max(camera.aspect, 0.01)) * 0.6;
+    const d = half / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    const dir = camera.position.clone().sub(controls.target).normalize();
+    controls.target.set(0, H / 2, 0);
+    camera.position.copy(controls.target).addScaledVector(dir, d);
+    return;
+  }
   const top = hero.baseY + hero.legH + (b.max.y - b.min.y) + (state.head !== 'none' ? 0.35 : 0);
   const ty = Math.max(0.6, top * 0.4);
   const d = ty - controls.target.y;
@@ -191,6 +208,7 @@ function randomize() {
 const ICON = {
   png: '<path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5"/><path d="M5 19h14"/>',
   video: '<rect x="3" y="6" width="13" height="12" rx="3"/><path d="m16 10 5-3v10l-5-3"/>',
+  embed: '<path d="m8.5 8-4.5 4 4.5 4M15.5 8l4.5 4-4.5 4M13.5 5.5l-3 13"/>',
   link: '<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/>',
 };
 // the download icon in the stage tab bar opens this menu
@@ -198,7 +216,13 @@ const exportMenu = createActionMenu(document.getElementById('export-menu'), [
   { id: 'png', label: 'Скачать PNG', icon: ICON.png },
   { id: 'video', label: 'Скачать видео', icon: ICON.video },
   { id: 'link', label: 'Скопировать ссылку', icon: ICON.link },
-], { trigger: stageBar.actionEl, up: true, onRun: (id) => ({ png: exportPNG, video: exportVideo, link: copyLink })[id]() });
+  { id: 'embed', label: 'Экспортировать код', icon: ICON.embed },
+], { trigger: stageBar.actionEl, up: true, onRun: (id) => ({ png: exportPNG, video: exportVideo, link: copyLink, embed: () => embedModal.open() })[id]() });
+const embedModal = createEmbedModal({
+  getUrl: () => `${location.origin}${location.pathname}?embed#${encodeState()}`,
+  getTitle: () => 'Claymates — анимированный персонаж',
+  toast,
+});
 
 function setExporting(on) {
   exporting = on;
@@ -210,7 +234,7 @@ function exportPNG() {
   setExporting(true); // centred character in the file
   renderer.render(scene, camera);
   setExporting(false);
-  scene.background = bgTex;
+  scene.background = SITE_BG;
   canvas.toBlob((blob) => download(blob, 'claymate.png'), 'image/png');
   toast('PNG с прозрачным фоном сохранён');
 }
@@ -265,7 +289,7 @@ async function exportVideo() {
     renderer.render(scene, camera);
     octx.clearRect(0, 0, size, size);
     octx.drawImage(canvas, sx, sy, size, size, 0, 0, size, size);
-    scene.background = bgTex;
+    scene.background = SITE_BG;
     applyViewShift();
     renderer.render(scene, camera);
   };
@@ -293,7 +317,7 @@ async function exportVideo() {
     await stopped;
     track.stop();
     hero.endLoop();
-    scene.background = bgTex;
+    scene.background = SITE_BG;
     applyViewShift();
     paused = false;
     recording = false;
@@ -328,6 +352,7 @@ document.addEventListener('pointerleave', () => { pointer.active = false; });
 const panelEl = document.getElementById('panel');
 let viewShift = 0, exporting = false;
 function panelSpace() {
+  if (EMBED) return 0;
   if (exporting || innerWidth <= 860 || !document.body.classList.contains('panel-open')) return 0;
   return panelEl.offsetWidth + 16;
 }

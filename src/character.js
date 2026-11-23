@@ -736,12 +736,16 @@ export class Character {
 
     /* secondary motion */
     const wy = this.root.position.y;
-    const vy = (wy - this.prevY) / dt, vz = (c.pz - this.prevPz) / dt;
+    // a zero frame time (two frames on the same timestamp, background pages) must not
+    // divide by zero — that turned the spring into NaN and made ears/sprouts vanish
+    const sdt = Math.max(dt, 1e-3);
+    const vy = (wy - this.prevY) / sdt, vz = (c.pz - this.prevPz) / sdt;
     this.prevY = wy; this.prevPz = c.pz;
     for (const j of this.jiggle) {
       const target = clamp((-vy * 0.25 - vz * 0.25) * j.gain, -0.7, 0.7);
       j.v += ((target - j.a) * 160 - j.v * 10) * dt;
       j.a += j.v * dt;
+      if (!Number.isFinite(j.a) || !Number.isFinite(j.v)) { j.a = 0; j.v = 0; }
       j.obj.rotation.x = j.a * 0.8;
       j.obj.rotation.z = -j.a * 0.4 + this.lsin(t, 2.1) * 0.03;
     }
