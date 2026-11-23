@@ -296,12 +296,16 @@ body.panel-open #panel { width: var(--panel-w); }
 .stage-dock { transition-delay: .2s; }
 body.intro .presets-wrap { opacity: 0; translate: 0 -16px; pointer-events: none; }
 body.intro .stage-dock { opacity: 0; translate: 0 24px; pointer-events: none; }
+/* the panel already takes its place while the character moves, but stays invisible until step 3 */
+body.intro #panel { opacity: 0 !important; pointer-events: none; }
 @media (min-width: 861px) {
   /* the panel glides in a little slower so it travels with the character */
-  #panel { transition: transform .55s cubic-bezier(.2,.9,.25,1), opacity .4s ease; }
+  #panel { transition: transform .55s cubic-bezier(.2,.9,.25,1), opacity .45s ease, translate .55s cubic-bezier(.2,.9,.25,1); }
+  body.intro #panel { translate: 24px 0; }
 }
 @media (max-width: 860px) {
-  #panel { transition: height .55s cubic-bezier(.2,.9,.25,1); }
+  #panel { transition: height .55s cubic-bezier(.2,.9,.25,1), opacity .45s ease, translate .55s cubic-bezier(.2,.9,.25,1); }
+  body.intro #panel { translate: 0 24px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .presets-wrap, .stage-dock, #panel { transition: none !important; }
