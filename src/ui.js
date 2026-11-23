@@ -92,6 +92,14 @@ const OPT_ICONS = {
   scarf:   '<path d="M7 13q13 7 26 0v6q-13 7-26 0Z"/><path d="M23 21l5 .5-1 12.5-5.5-1.5Z"/>',
 };
 
+// Material icons: a ball rendered the way each material looks.
+const MATERIAL_ICONS = {
+  matte: '<circle cx="20" cy="20" r="13"/>',
+  glass: '<circle cx="20" cy="20" r="13"/><path fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" d="M12.5 17a8.5 8.5 0 0 1 6-6"/><circle cx="25.5" cy="13.5" r="1.7" fill="#fff" stroke="none"/><path fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="2" stroke-linecap="round" d="M27 27.5a8.5 8.5 0 0 1-4 2.2"/>',
+  glow:  '<circle cx="20" cy="20" r="16.5" opacity=".18" stroke="none"/><circle cx="20" cy="20" r="13.5" opacity=".3" stroke="none"/><circle cx="20" cy="20" r="10"/><circle cx="20" cy="20" r="5" fill="#fff" opacity=".6" stroke="none"/>',
+  plush: '<path stroke-linejoin="round" stroke-width="1.6" d="M33.2 20.0 L31.1 22.5 L31.9 25.7 L28.9 27.1 L28.2 30.3 L24.9 30.3 L22.9 32.9 L20.0 31.4 L17.1 32.9 L15.1 30.3 L11.8 30.3 L11.1 27.1 L8.1 25.7 L8.9 22.5 L6.8 20.0 L8.9 17.5 L8.1 14.3 L11.1 12.9 L11.8 9.7 L15.1 9.7 L17.1 7.1 L20.0 8.6 L22.9 7.1 L24.9 9.7 L28.2 9.7 L28.9 12.9 L31.9 14.3 L31.1 17.5Z"/>',
+};
+
 const OFF_ICON = '<circle cx="20" cy="20" r="11" fill="none" stroke-width="3"/><path d="M12.5 12.5l15 15" fill="none" stroke-width="3" stroke-linecap="round"/>';
 
 const TABS = [
@@ -107,7 +115,7 @@ const TABS = [
     { key: 'emotion', type: 'iconGrid', options: Object.entries(EMOTIONS).map(([v, e]) => ({ v, label: e.label, icon: FACE_BASE + (FACES[v] || '') })) },
   ] },
   { id: 'material', label: 'Материал', controls: [
-    { key: 'material', type: 'choice', label: 'Фактура', options: Object.entries(MATERIALS).map(([v, m]) => ({ v, label: m.label })) },
+    { key: 'material', type: 'iconGrid', options: Object.entries(MATERIALS).map(([v, m]) => ({ v, label: m.label, icon: MATERIAL_ICONS[v] || '' })) },
     { key: 'color', type: 'color', label: 'Цвет тела', palette: PALETTE },
     { key: 'color2', type: 'color', label: 'Второй цвет градиента', palette: PALETTE, showIf: (s) => s.material === 'glow' },
     { key: 'limbSame', type: 'toggle', label: 'Руки и ноги — цветом тела' },
@@ -278,26 +286,6 @@ export function createUI({ state, onChange, onPreset, onRandom }) {
         });
         wrap.appendChild(js.el);
         refreshFn = () => js.set(state[c.key]);
-        break;
-      }
-      case 'choice': {
-        const row = h('div', 'chips');
-        // "turn it off" options (Нет / Ничего) always come first and carry a ⊘ icon
-        const isOff = (o) => o.v === 'none' || o.v === 'off';
-        const opts = [...c.options.filter(isOff), ...c.options.filter((o) => !isOff(o))];
-        for (const o of opts) {
-          const b = isOff(o)
-            ? h('button', 'chip chip-off', `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M6 6l12 12"/></svg>`)
-            : h('button', 'chip', `<span>${o.label}</span>`);
-          b.dataset.v = o.v; b.onclick = () => set(c.key, o.v);
-          if (isOff(o)) { b.title = o.label; b.setAttribute('aria-label', o.label); } // icon only, name kept for hover and screen readers
-          row.appendChild(b);
-        }
-        wrap.appendChild(row);
-        const pill = createMorphPill(row, 'morph-pill morph-pill--outline');
-        refreshFn = () => row.querySelectorAll('.chip').forEach((b) => {
-          const on = b.dataset.v === state[c.key]; b.classList.toggle('on', on); if (on) pill.moveTo(b);
-        });
         break;
       }
       case 'color': {
