@@ -275,9 +275,15 @@ body.panel-open #panel { width: var(--panel-w); }
 @media (max-width: 860px) {
   #app { flex-direction: column; }
   #stage { flex: 1; min-height: 0; }
-  #panel { width: 100% !important; height: 0; border-left: 0; border-top: 1px solid var(--line); transition: height .25s; }
+  /* bottom sheet: rounded top corners, overlapping the stage so its background shows in the corners */
+  #panel {
+    position: relative; z-index: 6; width: 100% !important; height: 0; margin-top: -24px;
+    border: var(--float-edge); border-bottom: 0; border-radius: 24px 24px 0 0;
+    box-shadow: 0 -8px 28px rgba(20,20,40,.08); transition: height .25s;
+  }
   body.panel-open #panel { height: 44vh; }
   .tabs, #controls { min-width: 0; }
+  .tabs { padding-top: 10px; }
   .presets-wrap { top: 12px; right: 12px; }
-  .stage-dock { bottom: 12px; } /* centred */
+  .stage-dock { bottom: calc(24px + 12px); } /* centred, clear of the sheet's rounded top */
 }

@@ -212,7 +212,7 @@ export function createUI({ state, onChange, onPreset, onRandom }) {
     const el = radio && radio.chipEl(id);
     if (!el) return;
     const l = el.offsetLeft - 24, r = el.offsetLeft + el.offsetWidth + 24;
-    if (l < tabsEl.scrollLeft) tabsEl.scrollTo({ left: l, behavior: 'smooth' });
+    if (l < tabsEl.scrollLeft) tabsEl.scrollTo({ left: Math.max(0, l), behavior: 'smooth' });
     else if (r > tabsEl.scrollLeft + tabsEl.clientWidth) tabsEl.scrollTo({ left: r - tabsEl.clientWidth, behavior: 'smooth' });
   };
 
