@@ -139,39 +139,43 @@ body[data-stage="anim"] .presets-wrap { display: none; }
 }
 #toast.show { opacity: 1; transform: translate(-50%, 0); }
 
-/* ---------- about: "i" in the bottom-left corner, tooltip on hover ---------- */
+/* ---------- about: badge in the bottom-left corner + dark tooltip (same look as the stage bar tooltip) ---------- */
 .about { position: absolute; left: var(--inset); bottom: var(--inset); z-index: 6; }
-.about-btn {
-  width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: var(--muted);
-  background: rgba(255,255,255,.7); backdrop-filter: blur(10px); border: var(--float-edge); transition: color .15s, background .15s;
-}
-.about-btn svg { width: 20px; height: 20px; }
-.about:hover .about-btn, .about:focus-within .about-btn, .about.open .about-btn { color: var(--ink); background: #fff; }
-.about-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.about-btn { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; -webkit-tap-highlight-color: transparent; }
+.about-btn svg { width: 28px; height: 28px; display: block; overflow: visible; will-change: transform; }
+.about-badge { fill: #b4b6c8; transition: fill .2s; }
+.about-btn:hover .about-badge, .about-btn[aria-expanded="true"] .about-badge { fill: var(--ink); }
+.about-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .about-tip {
-  position: absolute; left: 0; bottom: calc(100% + 10px); width: 280px; padding: 14px 16px; border-radius: 14px;
-  background: var(--ink); color: #fff; font-size: 13px; line-height: 1.45;
-  opacity: 0; visibility: hidden; transform: translateY(6px) scale(.97); transform-origin: 16px 100%;
-  transition: opacity .18s, transform .22s cubic-bezier(.2,.9,.3,1.2), visibility 0s .22s;
+  position: absolute; left: 0; bottom: calc(100% + 12px); width: max-content; padding: 6px; border-radius: 14px;
+  background: var(--ink); color: #fff; opacity: 0; visibility: hidden;
+  transform-origin: 18px 130%; will-change: transform, opacity;
 }
-/* invisible bridge so the pointer can travel from the button to the links */
-.about-tip::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 12px; }
-.about:hover .about-tip, .about:focus-within .about-tip, .about.open .about-tip {
-  opacity: 1; visibility: visible; transform: none; transition: opacity .18s, transform .22s cubic-bezier(.2,.9,.3,1.2), visibility 0s;
+/* bridge across the gap so the pointer can reach the links */
+.about-tip::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 14px; }
+.about-tail {
+  position: absolute; left: 12px; bottom: calc(100% + 9px); width: 12px; height: 12px; border-radius: 3px;
+  background: var(--ink); opacity: 0; pointer-events: none; will-change: transform, opacity;
 }
-.about-tip b { display: block; font-size: 14px; font-weight: 800; margin-bottom: 4px; }
-.about-tip p { margin: 0 0 12px; color: rgba(255,255,255,.75); }
-.about-links { display: flex; gap: 6px; }
-.about-links a {
-  height: 30px; padding: 0 12px; border-radius: 9px; display: grid; place-items: center; font-weight: 700; font-size: 12.5px;
-  color: #fff; text-decoration: none; background: rgba(255,255,255,.12); transition: background .15s;
+.about-gh {
+  display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 12px; border-radius: 10px;
+  color: #fff; text-decoration: none; font-size: 13px; font-weight: 700; letter-spacing: -.005em;
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); transition: background .15s, border-color .15s;
 }
-.about-links a:hover { background: rgba(255,255,255,.22); }
-.about-links a:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+.about-gh:hover { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.2); }
+.about-gh svg { width: 18px; height: 18px; flex: none; }
+.about-gh span { flex: 1; padding-right: 18px; }
+.about-gh svg:last-child { width: 15px; height: 15px; color: rgba(255,255,255,.55); transition: transform .2s, color .2s; }
+.about-gh:hover svg:last-child { color: #fff; transform: translate(1px, -1px); }
+.about-by { margin: 0; padding: 9px 8px 5px; display: flex; align-items: center; gap: 5px; font-size: 12.5px; color: rgba(255,255,255,.6); white-space: nowrap; }
+.about-by svg { width: 14px; height: 14px; }
+.about-by a { color: #fff; font-weight: 800; text-decoration: none; }
+.about-by a:hover { text-decoration: underline; text-underline-offset: 2px; }
+.about-tip a:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
 .about { transition: opacity .5s ease .2s; }
 body.intro .about { opacity: 0; pointer-events: none; }
 body.embed .about { display: none !important; }
-@media (max-width: 860px) { .about { bottom: calc(24px + 12px); left: 12px; } .about-tip { width: min(280px, calc(100vw - 24px)); } }
+@media (max-width: 860px) { .about { bottom: calc(24px + 12px); left: 12px; } }
 
 /* ---------- panel ---------- */
 #panel {

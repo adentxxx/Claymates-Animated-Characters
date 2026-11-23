@@ -6,6 +6,7 @@ import { createUI, STAGES } from './ui.js';
 import { createStageBar } from './stagebar.js';
 import { createActionMenu } from './exportmenu.js';
 import { createEmbedModal } from './embedmodal.js';
+import { createAbout } from './about.js';
 import { DEFAULTS, PRESETS, PALETTE, presetState } from './presets.js';
 import { SHAPES } from './sdf.js';
 import { normalizeMaterial } from './materials.js';
@@ -218,11 +219,7 @@ const exportMenu = createActionMenu(document.getElementById('export-menu'), [
   { id: 'link', label: 'Скопировать ссылку', icon: ICON.link },
   { id: 'embed', label: 'Экспортировать код', icon: ICON.embed, soon: true }, // enabled once the site is published
 ], { trigger: stageBar.actionEl, up: true, onRun: (id) => ({ png: exportPNG, video: exportVideo, link: copyLink, embed: () => embedModal.open() })[id]() });
-// "i" in the corner: hover shows the tooltip; on touch screens a tap toggles it
-const about = document.querySelector('.about');
-about.querySelector('.about-btn').addEventListener('click', () => about.classList.toggle('open'));
-addEventListener('pointerdown', (e) => { if (!about.contains(e.target)) about.classList.remove('open'); });
-about.addEventListener('keydown', (e) => { if (e.key === 'Escape') { about.classList.remove('open'); document.activeElement.blur(); } });
+createAbout(document.getElementById('about'));
 
 const embedModal = createEmbedModal({
   getUrl: () => `${location.origin}${location.pathname}?embed#${encodeState()}`,
