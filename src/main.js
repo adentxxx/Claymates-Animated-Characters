@@ -141,6 +141,16 @@ window.addEventListener('keydown', (e) => {
   stageBar.select(item.id);
 });
 
+// pasting another character link into the address bar switches to it without a reload
+// (our own history.replaceState does not fire hashchange)
+window.addEventListener('hashchange', () => {
+  const next = loadFromHash();
+  if (!next) return;
+  Object.assign(state, next);
+  state.material = normalizeMaterial(state.material);
+  hero.clearParticles(); rebuildAll(); ui.refresh();
+});
+
 let hashTimer = 0;
 function diffState() {
   const d = {};
@@ -330,6 +340,11 @@ function resize() {
   const w = stage.clientWidth, h = stage.clientHeight;
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
+  // tall, narrow stages (phones, especially during the intro before the sheet opens):
+  // keep the horizontal field of view from shrinking so the character never spills off the sides
+  const BASE_FOV = 32, MIN_ASPECT = 0.9;
+  camera.fov = camera.aspect >= MIN_ASPECT ? BASE_FOV
+    : THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(BASE_FOV / 2)) * MIN_ASPECT / camera.aspect));
   viewShift = panelSpace();
   applyViewShift();
   camera.updateProjectionMatrix();
@@ -340,14 +355,35 @@ rebuildAll();
 resize();
 
 const clock = new THREE.Clock();
+/* ---------------- intro ----------------
+   On load the character pops up in the middle of the screen (UI hidden, panel closed),
+   then glides to its usual place while the panel, presets and tab bar come in. */
+const INTRO = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+const easeOutBack = (k) => { const c = 1.9; return 1 + (c + 1) * (k - 1) ** 3 + c * (k - 1) ** 2; };
+let introT = INTRO ? 0 : -1, revealed = false;
+function revealUI() {
+  revealed = true;
+  document.body.classList.remove('intro');
+  document.body.classList.add('panel-open');
+}
+hero.root.scale.setScalar(INTRO ? 0.001 : 1);
+if (!INTRO) revealUI();
+
 function frame() {
   const dt = clock.getDelta();
   if (paused) { requestAnimationFrame(frame); return; } // loop export drives rendering itself
   flush();
+  if (introT >= 0) {
+    introT += Math.min(dt, 1 / 30);
+    const k = Math.min(1, Math.max(0, (introT - 0.15) / 0.7));
+    hero.root.scale.setScalar(Math.max(0.001, easeOutBack(k)));
+    if (introT > 1.1 && !revealed) revealUI();
+    if (k >= 1 && revealed) { hero.root.scale.setScalar(1); introT = -1; }
+  }
   if (performance.now() - pointer.last > 4000) pointer.active = false;
   const target = panelSpace();
   if (Math.abs(target - viewShift) > 0.5) {
-    viewShift = exporting ? target : viewShift + (target - viewShift) * Math.min(1, dt * 10);
+    viewShift = exporting ? target : viewShift + (target - viewShift) * Math.min(1, dt * 6);
     applyViewShift();
   }
   hero.update(dt, state, pointer);
