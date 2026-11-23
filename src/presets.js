@@ -5,7 +5,7 @@ export const DEFAULTS = {
   color: '#3d7bff', color2: '#ff7ad9', material: 'matte', limbSame: true, limbColor: '#ffffff',
   // face
   eyes: 'dots', eyeSize: 1, eyeSpacing: 0.36, faceY: 0.55, mouth: true, mouthGap: 0.4, mouthSize: 1,
-  brows: 'auto', shine: true,
+  brows: 'auto', blush: true, shine: true,
   // limbs
   arms: 'stubby', armLength: 1, armY: 0.4, legs: 'stubby', legLength: 1, limbThick: 1,
   // accessories

@@ -38,6 +38,27 @@ const FACES = {
   dizzy:     `<path ${W} d="M12.5 15.5l4 4m0-4-4 4M23.5 15.5l4 4m0-4-4 4"/><path ${W} d="M13.5 26q1.6-2 3.2 0t3.3 0 3.3 0 3.2 0"/>`,
 };
 
+// Animation icons, same flat style: accent fills and accent strokes (L = line attributes).
+const L = 'fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"';
+const BLOB = (x, y, w = 12, h = 16) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${w / 2}"/>`;
+const ANIM_ICONS = {
+  idle:   BLOB(14, 12, 12, 18) + `<path ${L} d="M9 17q-2 4 0 8M31 17q2 4 0 8"/>`,
+  bounce: BLOB(14, 5, 12, 15) + `<path ${L} d="M17 24v3M23 24v3M10 34h20"/>`,
+  wave:   BLOB(9, 15, 12, 18) + `<path ${L} d="M19 19l7-8"/><circle cx="27" cy="9.5" r="3"/><path ${L} d="M31 4.5q2.5 2 1.5 5M33.5 11q1.5 2.5-.5 4.5"/>`,
+  dance:  `<path ${L} d="M16 29V11l13-3v17"/><ellipse cx="13" cy="29" rx="4" ry="3.2"/><ellipse cx="26" cy="25" rx="4" ry="3.2"/>`,
+  walk:   `<ellipse cx="14" cy="24" rx="4.5" ry="6.5" transform="rotate(-12 14 24)"/><ellipse cx="26" cy="15" rx="4.5" ry="6.5" transform="rotate(12 26 15)"/><circle cx="12" cy="13.5" r="1.6"/><circle cx="29" cy="6" r="1.6"/>`,
+  spin:   `<path ${L} d="M30 22a10 10 0 1 1-3.2-9.3"/><path d="M24 9.5l6.5 1.2-1 6.4Z"/>`,
+  nod:    `<circle cx="20" cy="20" r="8"/><path ${L} d="M20 4.5v4M17.5 7l2.5-2.5L22.5 7M20 35.5v-4M17.5 33l2.5 2.5 2.5-2.5"/>`,
+  shake:  `<circle cx="20" cy="20" r="8"/><path ${L} d="M4.5 20h4M7 17.5 4.5 20 7 22.5M35.5 20h-4M33 17.5l2.5 2.5-2.5 2.5"/>`,
+  look:   `<circle cx="13" cy="20" r="7.5" fill="#fff" stroke-width="2.4"/><circle cx="27" cy="20" r="7.5" fill="#fff" stroke-width="2.4"/><circle cx="16.5" cy="19" r="3.4" stroke="none"/><circle cx="30.5" cy="19" r="3.4" stroke="none"/>`,
+  talk:   `<path d="M9 9h22a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H19l-6.5 5v-5H9a4 4 0 0 1-4-4V13a4 4 0 0 1 4-4Z"/><circle cx="14" cy="18" r="1.8" fill="#fff" stroke="none"/><circle cx="20" cy="18" r="1.8" fill="#fff" stroke="none"/><circle cx="26" cy="18" r="1.8" fill="#fff" stroke="none"/>`,
+  cheer:  BLOB(14, 15, 12, 18) + `<path ${L} d="M15.5 19L9 9.5M24.5 19L31 9.5"/><circle cx="8.5" cy="8.5" r="2.4"/><circle cx="31.5" cy="8.5" r="2.4"/>`,
+  jelly:  `<path d="M9 31c0-9 3-17 11-17s11 8 11 17c-2.5 1.5-4.5-1-7.3.5-2.7 1.5-5.4-1.4-7.6 0-2.4 1.5-4.6-1.2-7.1-.5Z"/><path ${L} d="M13 8.5q3.5-3 7 0t7 0"/>`,
+  shy:    `<circle cx="20" cy="20" r="12"/><path fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" d="M13.5 18q2.2 2.4 4.4 0M22.1 18q2.2 2.4 4.4 0M17.5 25q2.5 1.5 5 0"/><ellipse cx="12.5" cy="23" rx="2.4" ry="1.4" fill="#fff" opacity=".55" stroke="none"/><ellipse cx="27.5" cy="23" rx="2.4" ry="1.4" fill="#fff" opacity=".55" stroke="none"/>`,
+  float:  `<ellipse cx="20" cy="15" rx="8.5" ry="10"/><path d="M18 24.5h4L20 27Z"/><path ${L} d="M20 27q-3 3 0 5.5t0 5"/>`,
+  sleep:  `<path ${L} d="M8 13h9l-9 11h9M22 9h7l-7 8.5h7M27.5 24h5l-5 6h5"/>`,
+};
+
 const OFF_ICON = '<circle cx="20" cy="20" r="11" fill="none" stroke-width="3"/><path d="M12.5 12.5l15 15" fill="none" stroke-width="3" stroke-linecap="round"/>';
 
 const TABS = [
@@ -74,6 +95,7 @@ const TABS = [
     { key: 'mouthSize', type: 'slider', label: 'Размер рта', min: 0.5, max: 2, step: 0.01, showIf: (s) => s.mouth },
     { key: 'mouthGap', type: 'slider', label: 'Рот ниже / выше', min: 0, max: 1.2, step: 0.01, showIf: (s) => s.mouth },
     { key: 'brows', type: 'choice', label: 'Брови', options: [{ v: 'auto', label: 'По эмоции' }, { v: 'on', label: 'Всегда' }, { v: 'off', label: 'Нет' }] },
+    { key: 'blush', type: 'toggle', label: 'Румянец' },
     { key: 'shine', type: 'toggle', label: 'Блики в глазах' },
   ] },
   { id: 'body', label: 'Руки/ноги', controls: [
@@ -99,7 +121,7 @@ const TABS = [
 
 const ANIM_TABS = [
   { id: 'motion', label: 'Анимация', controls: [
-    { key: 'anim', type: 'cards', items: ANIMS },
+    { key: 'anim', type: 'iconGrid', cols: 3, options: Object.entries(ANIMS).map(([v, a]) => ({ v, label: a.label, icon: ANIM_ICONS[v] || '' })) },
     { key: 'speed', type: 'slider', label: 'Скорость анимации', min: 0.2, max: 2.5, step: 0.05, format: (v) => v.toFixed(2).replace(/0$/, '').replace('.', ',') + '×' },
     { key: 'follow', type: 'toggle', label: 'Следить за курсором' },
     { key: 'blink', type: 'toggle', label: 'Моргать' },
@@ -264,20 +286,6 @@ export function createUI({ state, onChange, onPreset, onRandom }) {
           if (!found) pick.style.background = state[c.key]; else pick.style.background = '';
           inp.value = state[c.key];
         };
-        break;
-      }
-      case 'cards': {
-        const grid = h('div', 'card-grid');
-        for (const [k, it] of Object.entries(c.items)) {
-          const b = h('button', 'card', `<b>${it.icon}</b><span>${it.label}</span>`);
-          b.dataset.v = k; b.onclick = () => set(c.key, k);
-          grid.appendChild(b);
-        }
-        wrap.appendChild(grid);
-        const pill = createMorphPill(grid, 'morph-pill morph-pill--outline');
-        refreshFn = () => grid.querySelectorAll('.card').forEach((b) => {
-          const on = b.dataset.v === state[c.key]; b.classList.toggle('on', on); if (on) pill.moveTo(b);
-        });
         break;
       }
       case 'toggle': {

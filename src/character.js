@@ -104,7 +104,7 @@ export class Character {
     this.ptr = { x: 0, y: 0 };
     this.baseY = 0;
     this.legH = 0;
-    this.arms = []; this.legs = []; this.eyes = []; this.brows = [];
+    this.arms = []; this.legs = []; this.eyes = []; this.brows = []; this.blushes = [];
     this.mouthKey = '';
     this.browVis = 0;
     this.faceOff = 0;
@@ -204,6 +204,7 @@ export class Character {
     L.mouthY = L.eyeY - (0.1 + 0.22 * st.mouthGap) * Math.max(0.85, st.eyeSize * 0.9);
     this.buildEyes(st);
     this.buildBrows(st);
+    this.buildBlush(st);
     this.buildMouth(st);
     this.buildArms(st);
     this.buildLegs(st);
@@ -297,6 +298,21 @@ export class Character {
     this.tear = mesh(new THREE.SphereGeometry(0.028, 16, 12), this.fm.tear, false);
     this.tear.visible = false;
     this.parts.add(this.tear);
+  }
+
+  // pink cheeks under the eyes; their strength follows the emotion (and the shy animation)
+  buildBlush(st) {
+    this.blushes = [];
+    const L = this.L;
+    for (const side of [1, -1]) {
+      const m = mesh(new THREE.SphereGeometry(0.075 * L.es, 24, 12), this.fm.blush, false);
+      m.scale.set(1.35, 0.75, 0.2);
+      const hit = this.surf.frontSafe(side * (L.eyeDX + 0.1 * L.es), L.eyeY - 0.11 * L.es);
+      placeOnSurface(m, hit, 0.004 + this.faceOff);
+      m.visible = st.blush;
+      this.parts.add(m);
+      this.blushes.push(m);
+    }
   }
 
   buildArms(st) {
@@ -696,6 +712,9 @@ export class Character {
     this.updateEyes(st, c, blinkK * c.eyeOpen, t);
     this.updateBrows(st, dt);
     this.updateMouth(st, c);
+    const blush = st.blush ? clamp(this.face.blush + c.blush, 0, 1) : 0;
+    this.fm.blush.opacity = 0.55 * blush;
+    for (const b of this.blushes) b.visible = blush > 0.02;
     this.updateTear(E, t);
 
     /* secondary motion */
