@@ -18,6 +18,26 @@ const SHAPE_ICONS = {
   ghost: '<path d="M8 18a12 12 0 0 1 24 0v16l-4-3-4 3-4-3-4 3-4-3-4 3Z"/>',
 };
 
+// Emotion icons, drawn in the same flat style as the shape and eye icons:
+// an accent-filled face with white features.
+const W = 'fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"';
+const DOT = (x, y, r = 1.9) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" stroke="none"/>`;
+const FACE_BASE = '<circle cx="20" cy="20" r="15"/>';
+const HEART = (x, y) => `<path d="M${x} ${y + 2.6}c-2.6-1.7-3.6-3-3.2-4.3.4-1.3 2.1-1.5 3.2-.2 1.1-1.3 2.8-1.1 3.2.2.4 1.3-.6 2.6-3.2 4.3Z" fill="#fff" stroke="none"/>`;
+const FACES = {
+  neutral:   DOT(14.5, 17.5) + DOT(25.5, 17.5) + `<path ${W} d="M15 25.5h10"/>`,
+  happy:     DOT(14.5, 17.5) + DOT(25.5, 17.5) + `<path ${W} d="M14.5 23.5q5.5 5 11 0"/>`,
+  joy:       `<path ${W} d="M12 18.5q2.5-3.5 5 0M23 18.5q2.5-3.5 5 0"/><path d="M13.5 22.5h13q-.6 6.5-6.5 6.5t-6.5-6.5Z" fill="#fff" stroke="none"/>`,
+  love:      HEART(14.5, 15.5) + HEART(25.5, 15.5) + `<path ${W} d="M15 24q5 4.5 10 0"/>`,
+  silly:     `<path ${W} d="M12 18q2.5-3 5 0"/>` + DOT(25.5, 17.5) + `<path ${W} d="M14 23.5q6 4.5 12 0"/><path d="M19 25.5h5v2.5a2.5 2.5 0 0 1-5 0Z" fill="#fff" stroke="none"/>`,
+  smug:      `<path ${W} d="M12.5 17.5h5M22.5 17.5h5"/><path ${W} d="M15 25.5q6 1.5 10.5-3"/>`,
+  surprised: DOT(14.5, 17, 2.3) + DOT(25.5, 17, 2.3) + `<path ${W} d="M12.5 12.5l4-1.2M27.5 12.5l-4-1.2"/><ellipse cx="20" cy="26" rx="2.8" ry="3.4" fill="#fff" stroke="none"/>`,
+  sad:       DOT(14.5, 18) + DOT(25.5, 18) + `<path ${W} d="M12.5 13.5l4 1.5M27.5 13.5l-4 1.5"/><path ${W} d="M15 27q5-4.5 10 0"/><path d="M28.6 21.5c1 1.6 1.6 2.5 1.6 3.2a1.6 1.6 0 0 1-3.2 0c0-.7.6-1.6 1.6-3.2Z" fill="#fff" stroke="none"/>`,
+  angry:     DOT(15, 19) + DOT(25, 19) + `<path ${W} d="M12 14l5.5 2.5M28 14l-5.5 2.5"/><path ${W} d="M15.5 26.5q4.5-3 9 0"/>`,
+  sleepy:    `<path ${W} d="M12 18q2.5 3 5 0M23 18q2.5 3 5 0"/><circle cx="20" cy="26" r="1.9" fill="#fff" stroke="none"/>`,
+  dizzy:     `<path ${W} d="M12.5 15.5l4 4m0-4-4 4M23.5 15.5l4 4m0-4-4 4"/><path ${W} d="M13.5 26q1.6-2 3.2 0t3.3 0 3.3 0 3.2 0"/>`,
+};
+
 const OFF_ICON = '<circle cx="20" cy="20" r="11" fill="none" stroke-width="3"/><path d="M12.5 12.5l15 15" fill="none" stroke-width="3" stroke-linecap="round"/>';
 
 const TABS = [
@@ -30,7 +50,7 @@ const TABS = [
     { key: 'wobble', type: 'slider', label: 'Ручная лепка', min: 0, max: 1.2, step: 0.01, mesh: true },
   ] },
   { id: 'emotion', label: 'Эмоция', controls: [
-    { key: 'emotion', type: 'cards', items: EMOTIONS },
+    { key: 'emotion', type: 'iconGrid', cols: 3, options: Object.entries(EMOTIONS).map(([v, e]) => ({ v, label: e.label, icon: FACE_BASE + (FACES[v] || '') })) },
   ] },
   { id: 'material', label: 'Материал', controls: [
     { key: 'material', type: 'choice', label: 'Фактура', options: Object.entries(MATERIALS).map(([v, m]) => ({ v, label: m.label })) },
@@ -179,7 +199,7 @@ export function createUI({ state, onChange, onPreset, onRandom }) {
       }
       case 'iconGrid': {
         // same tiles as the shape grid: icon + caption; the "off" option is icon only
-        const grid = h('div', 'shape-grid');
+        const grid = h('div', 'shape-grid' + (c.cols ? ' cols-' + c.cols : ''));
         for (const o of c.options) {
           const off = o.v === 'none' || o.v === 'off';
           const b = h('button', 'shape-btn' + (off ? ' tile-off' : ''), `<svg viewBox="0 0 40 40">${o.icon}</svg>${off ? '' : `<span>${o.label}</span>`}`);
