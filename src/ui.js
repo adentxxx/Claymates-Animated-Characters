@@ -4,6 +4,7 @@ import { EMOTIONS, ANIMS } from './animations.js';
 import { PALETTE, PRESETS } from './presets.js';
 import { createJellySlider } from './jellyslider.js';
 import { createMorphPill } from './morphpill.js';
+import { createJellyRadio } from './jellyradio.js';
 
 const SHAPE_ICONS = {
   ball: '<circle cx="20" cy="21" r="14"/>',
@@ -185,50 +186,63 @@ export function createUI({ state, onChange, onPreset, onRandom }) {
   const refreshers = [];
   const store = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch { return null; } };
 
-  /* ---- stages, each with its own tabs ---- */
-  const tabBtns = {}, panes = {}, lastTab = {};
-  let stage = null;
+  /* ---- stages, each with its own tabs (a jelly radio row) ---- */
+  const panes = {}, lastTab = {};
+  let stage = null, curTab = null, radio = null;
   for (const st of STAGES) {
     lastTab[st.id] = store('claymates.tab.' + st.id) || st.tabs[0].id;
     for (const tab of st.tabs) {
-      const b = h('button', 'tab', tab.label);
-      b.dataset.stage = st.id;
-      b.onclick = () => select(tab.id);
-      tabsEl.appendChild(b); tabBtns[tab.id] = b;
       const pane = h('div', 'pane');
       pane.dataset.stage = st.id;
       panes[tab.id] = pane; ctrlEl.appendChild(pane);
       for (const c of tab.controls) pane.appendChild(control(c));
     }
   }
-  // morphing pill under the active tab (same springs as the stage tab bar)
-  const tabPill = createMorphPill(tabsEl, 'morph-pill tab-pill');
-  let curTab = null;
-  const placePill = (snap) => tabPill.moveTo(tabBtns[curTab], snap);
+  // tabs scroll sideways when they do not fit; edges fade like the presets row
+  const tabsRow = h('div');
+  tabsEl.appendChild(tabsRow);
+  const updateTabsFade = () => {
+    const rest = tabsEl.scrollWidth - tabsEl.clientWidth - tabsEl.scrollLeft;
+    tabsEl.style.setProperty('--fl', tabsEl.scrollLeft > 2 ? '28px' : '0px');
+    tabsEl.style.setProperty('--fr', rest > 2 ? '28px' : '0px');
+  };
+  tabsEl.addEventListener('scroll', updateTabsFade, { passive: true });
+  new ResizeObserver(updateTabsFade).observe(tabsEl);
+  const revealTab = (id) => {
+    const el = radio && radio.chipEl(id);
+    if (!el) return;
+    const l = el.offsetLeft - 24, r = el.offsetLeft + el.offsetWidth + 24;
+    if (l < tabsEl.scrollLeft) tabsEl.scrollTo({ left: l, behavior: 'smooth' });
+    else if (r > tabsEl.scrollLeft + tabsEl.clientWidth) tabsEl.scrollTo({ left: r - tabsEl.clientWidth, behavior: 'smooth' });
+  };
 
   function select(id, snap = false) {
     const prev = curTab;
     lastTab[stage.id] = id;
     store('claymates.tab.' + stage.id, id);
     curTab = id;
-    // content slides in from the side the pill is moving to
+    // content slides in from the side of the move
     const order = stage.tabs.map((t) => t.id);
     const dir = prev && !snap && order.includes(prev) ? Math.sign(order.indexOf(id) - order.indexOf(prev)) : 0;
-    for (const k in tabBtns) { tabBtns[k].classList.toggle('on', k === id); panes[k].hidden = k !== id; }
+    for (const k in panes) panes[k].hidden = k !== id;
     if (dir) {
       const pane = panes[id];
       pane.style.setProperty('--dx', dir * 18 + 'px');
       pane.classList.remove('pane-in'); void pane.offsetWidth; pane.classList.add('pane-in');
     }
-    placePill(snap || !prev);
+    if (radio && radio.value !== id) radio.set(id);
+    revealTab(id);
   }
   function setStage(id) {
     stage = STAGES.find((s) => s.id === id) || STAGES[0];
     store('claymates.stage', stage.id);
     document.body.dataset.stage = stage.id;
-    for (const k in tabBtns) tabBtns[k].hidden = tabBtns[k].dataset.stage !== stage.id;
     tabsEl.hidden = stage.tabs.length < 2;
     const tab = stage.tabs.some((t) => t.id === lastTab[stage.id]) ? lastTab[stage.id] : stage.tabs[0].id;
+    radio = stage.tabs.length < 2 ? null : createJellyRadio(tabsRow, stage.tabs.map((t) => ({ value: t.id, label: t.label })), {
+      value: tab, ariaLabel: 'Разделы настроек', onChange: (v) => select(v),
+    });
+    tabsEl.scrollLeft = 0;
     select(tab, true);
     ctrlEl.scrollTop = 0;
     ctrlEl.classList.remove('enter'); void ctrlEl.offsetWidth; ctrlEl.classList.add('enter');

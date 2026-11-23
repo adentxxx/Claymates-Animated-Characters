@@ -140,10 +140,44 @@ body[data-stage="anim"] .presets-wrap { display: none; }
   overflow: hidden; transition: width .25s ease;
 }
 body.panel-open #panel { width: var(--panel-w); }
-.tabs { position: relative; display: flex; flex-wrap: wrap; gap: 4px; padding: 14px 14px 10px; border-bottom: 1px solid var(--line); min-width: var(--panel-w); }
-.tab { position: relative; z-index: 1; padding: 8px 11px; border-radius: 10px; font-size: 13px; font-weight: 700; color: var(--muted); transition: color .2s, background .15s; }
-.tab:hover { background: var(--soft); color: var(--ink); }
-.tab.on, .tab.on:hover { background: none; color: #fff; }
+.tabs {
+  --fl: 0px; --fr: 0px;
+  position: relative; padding: 8px 4px 4px; border-bottom: 1px solid var(--line); min-width: var(--panel-w);
+  overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--fl), #000 calc(100% - var(--fr)), transparent 100%);
+          mask-image: linear-gradient(to right, transparent 0, #000 var(--fl), #000 calc(100% - var(--fr)), transparent 100%);
+}
+.tabs::-webkit-scrollbar { display: none; }
+
+/* jelly radio (panel tabs) — port of React Bits JellyRadio, in Claymates colours */
+.jelly-radio {
+  --jr-chip: var(--soft); --jr-active: var(--ink); --jr-text: var(--muted); --jr-active-text: #fff;
+  --jr-gap: 6px; --jr-radius: 12px; --jr-h: 34px; --jr-font: 13px; --jr-px: 14px;
+  --jr-pad-x: 16px; --jr-pad-y: 6px; --jr-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  display: inline-flex; align-items: center; gap: var(--jr-gap); padding: var(--jr-pad-y) var(--jr-pad-x);
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+}
+.jelly-radio__chip {
+  position: relative; margin: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit;
+  cursor: pointer; outline: none; transform-origin: 50% 50%; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.jelly-radio__chip[data-on='true'] { cursor: default; }
+.jelly-radio__chip:focus-visible .jelly-radio__skin { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--accent); }
+.jelly-radio__skin {
+  position: relative; display: inline-flex; align-items: center; justify-content: center; gap: .4em;
+  height: var(--jr-h); padding: 0 var(--jr-px); border-radius: var(--jr-radius); overflow: hidden;
+  background: var(--jr-chip); color: var(--jr-text); font-size: var(--jr-font); font-weight: 700; line-height: 1; white-space: nowrap;
+  transition: transform 160ms var(--jr-ease-out), background-color 200ms ease, color 200ms ease;
+}
+.jelly-radio__skin::before { content: ''; position: absolute; inset: 0; background: var(--ink); opacity: 0; pointer-events: none; transition: opacity 160ms ease; }
+@media (hover: hover) and (pointer: fine) {
+  .jelly-radio__chip[data-on='false']:hover .jelly-radio__skin::before { opacity: .06; }
+  .jelly-radio__chip[data-on='false']:hover .jelly-radio__skin { color: var(--ink); }
+}
+.jelly-radio__chip:active .jelly-radio__skin { transform: scale(.97); }
+.jelly-radio__chip[data-on='true'] .jelly-radio__skin { background: var(--jr-active); color: var(--jr-active-text); }
+.jelly-radio__label { position: relative; }
+@media (prefers-reduced-motion: reduce) { .jelly-radio__chip:active .jelly-radio__skin { transform: none; } }
 /* the pill that morphs between selected items: panel tabs (filled) and icon grids (outlined) */
 /* ---------- selection pill: two styles ----------
    primary  (filled):   dark pill, white label — main navigation (panel tabs)
@@ -172,7 +206,6 @@ body.panel-open #panel { width: var(--panel-w); }
   body.panel-open #panel { width: var(--panel-w); }
   body:not(.panel-open) #panel { transform: translateX(calc(100% + var(--inset) * 2)); opacity: 0; pointer-events: none; }
   .tabs, #controls { min-width: 0; }
-  .tabs { padding: 12px 12px 10px; }
 }
 
 .ctl { padding: 12px 0; border-bottom: 1px dashed var(--line); }
@@ -232,7 +265,6 @@ body.panel-open #panel { width: var(--panel-w); }
 .btn-soft:hover { background: #e9eaf3; }
 
 .tabs[hidden] { display: none; }
-.tab[hidden] { display: none; }
 
 #controls.enter { animation: stage-in .32s cubic-bezier(.2,.8,.2,1); }
 @keyframes stage-in { from { opacity: 0; transform: translateY(8px); } }
