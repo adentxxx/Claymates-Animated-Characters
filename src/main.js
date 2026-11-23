@@ -32,8 +32,11 @@ state.material = normalizeMaterial(state.material);
 /* ---------------- renderer & scene ---------------- */
 const stage = document.getElementById('stage');
 const canvas = document.getElementById('c');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: false });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: false, powerPreference: 'high-performance' });
+// adaptive resolution: start at the screen's density (max 2) and step down if frames get slow
+const MAX_DPR = Math.min(window.devicePixelRatio || 1, 2);
+let dpr = MAX_DPR;
+renderer.setPixelRatio(dpr);
 renderer.toneMapping = THREE.NeutralToneMapping;
 renderer.toneMappingExposure = 1.05;
 
@@ -401,9 +404,29 @@ function revealUI() {
 hero.root.scale.setScalar(INTRO ? 0.001 : 1);
 if (!INTRO) revealUI();
 
+// embeds: don't draw while the iframe is scrolled out of view
+let onScreen = true;
+if (EMBED && 'IntersectionObserver' in window) {
+  new IntersectionObserver(([e]) => { onScreen = e.isIntersecting; }).observe(document.body);
+}
+// frame-time watchdog: if the average frame is slow for ~2 s, render fewer pixels
+const perf = { t: 0, n: 0, sum: 0 };
+function watchFrameTime(dt) {
+  if (introT >= 0 || exporting || document.hidden) return;
+  perf.t += dt; perf.n++; perf.sum += Math.min(dt, 0.1);
+  if (perf.t < 2) return;
+  const avg = perf.sum / perf.n;
+  perf.t = perf.n = perf.sum = 0;
+  let next = dpr;
+  if (avg > 1 / 40 && dpr > 1) next = Math.max(1, dpr - 0.25);              // < 40 fps: step down
+  else if (avg < 1 / 75 && dpr < MAX_DPR) next = Math.min(MAX_DPR, dpr + 0.25); // plenty of headroom: step back up
+  if (next !== dpr) { dpr = next; renderer.setPixelRatio(dpr); resize(); }
+}
+
 function frame() {
   const dt = clock.getDelta();
-  if (paused) { requestAnimationFrame(frame); return; } // loop export drives rendering itself
+  if (paused || !onScreen) { requestAnimationFrame(frame); return; } // loop export drives rendering itself
+  watchFrameTime(dt);
   flush();
   if (introT >= 0) {
     introT += Math.min(dt, 1 / 30);

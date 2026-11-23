@@ -4,7 +4,7 @@
 import { S, step, clamp, settled, register } from './motion.js';
 
 const SHOW = [420, 24]; // same spring as the stage bar tooltip
-const GITHUB = 'https://github.com/adentxxx/Squish-Animated-Characters';
+const GITHUB = 'https://github.com/adentxxx/Claymates-Animated-Characters';
 const DEV = 'https://hereisalex.art/';
 
 // scalloped "cookie" outline: a circle with soft wavy lobes

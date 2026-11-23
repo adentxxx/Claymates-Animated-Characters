@@ -1,4 +1,4 @@
-import { S, tune, step, clamp } from './motion.js';
+import { S, tune, step, clamp, settled } from './motion.js';
 
 // Stage switcher: a small icon tab bar at the bottom centre with one morphing tooltip.
 // Ported from the "Morph tooltip" motion component (designbookmark.com/motion).
@@ -53,10 +53,12 @@ export function createStageBar(root, items, { initial, onSelect, action = null }
   const HL = S(0, SPRING.lead), HR = S(0, SPRING.lead);                         // hover highlight edges
   const A = S(0, SPRING.show);                                                  // shown amount
   let cur = -1, hideT = null, active = -1;
+  let running = false, last = 0;
+  const wake = () => { if (!running) { running = true; last = performance.now(); requestAnimationFrame(loop); } };
 
   // timers on the spring clock
   const timers = [];
-  const after = (sec, fn) => { const t = { t: sec, fn }; timers.push(t); return t; };
+  const after = (sec, fn) => { const t = { t: sec, fn }; timers.push(t); wake(); return t; };
   const cancel = (t) => { const i = timers.indexOf(t); if (i > -1) timers.splice(i, 1); };
 
   function place(i, snap) {
@@ -87,6 +89,7 @@ export function createStageBar(root, items, { initial, onSelect, action = null }
       });
     }
     cur = i; A.t = 1;
+    wake();
   }
   function leave(delay = 0.14) {
     if (hideT) cancel(hideT);
@@ -97,6 +100,7 @@ export function createStageBar(root, items, { initial, onSelect, action = null }
     active = i;
     tools.forEach((t, k) => { t.el.setAttribute('aria-selected', k === i); t.el.tabIndex = k === i ? 0 : -1; });
     tools[i].p.x = 0.78; A.x = Math.min(A.x, 0.9);
+    wake();
     if (notify) onSelect(items[i].id);
   }
 
@@ -110,7 +114,7 @@ export function createStageBar(root, items, { initial, onSelect, action = null }
     actionBtn.el.addEventListener('pointerenter', () => point(n));
     actionBtn.el.addEventListener('focus', () => point(n));
     actionBtn.el.addEventListener('blur', () => leave());
-    actionBtn.el.addEventListener('click', () => { actionBtn.p.x = 0.78; leave(0); action.onClick(actionBtn.el); });
+    actionBtn.el.addEventListener('click', () => { actionBtn.p.x = 0.78; wake(); leave(0); action.onClick(actionBtn.el); });
   }
   bar.addEventListener('pointerleave', () => leave());
   bar.addEventListener('keydown', (e) => {
@@ -121,7 +125,7 @@ export function createStageBar(root, items, { initial, onSelect, action = null }
 
   select(Math.max(0, items.findIndex((it) => it.id === initial)), false);
 
-  let last = performance.now();
+  last = performance.now();
   function loop(now) {
     const dt = Math.min((now - last) / 1000, 1 / 30); last = now;
     for (let i = timers.length - 1; i >= 0; i--) if ((timers[i].t -= dt) <= 0) timers.splice(i, 1)[0].fn();
@@ -133,6 +137,8 @@ export function createStageBar(root, items, { initial, onSelect, action = null }
       if (actionBtn) step(actionBtn.p, h);
     }
     render();
+    const springs = [TL, TR, TX, HL, HR, A, ...labs.map((l) => l.o), ...tools.map((t) => t.p), ...(actionBtn ? [actionBtn.p] : [])];
+    if (!timers.length && springs.every((s) => settled(s, 0.002))) { running = false; return; } // idle: sleep until the next event
     requestAnimationFrame(loop);
   }
   function render() {
@@ -157,7 +163,7 @@ export function createStageBar(root, items, { initial, onSelect, action = null }
     tools.forEach((t) => { t.ic.style.transform = `scale(${t.p.x.toFixed(4)})`; });
     if (actionBtn) actionBtn.ic.style.transform = `scale(${actionBtn.p.x.toFixed(4)})`;
   }
-  requestAnimationFrame(loop);
+  wake();
 
   return {
     actionEl: actionBtn ? actionBtn.el : null,
