@@ -348,6 +348,9 @@ function resize() {
   viewShift = panelSpace();
   applyViewShift();
   camera.updateProjectionMatrix();
+  // resizing clears the canvas; draw again right away so it never shows an empty frame
+  // (on phones the stage shrinks every frame while the settings sheet rises)
+  if (!paused && hero.box) renderer.render(scene, camera);
 }
 new ResizeObserver(resize).observe(stage);
 
@@ -357,16 +360,11 @@ resize();
 const clock = new THREE.Clock();
 /* ---------------- intro ----------------
    On load the character pops up in the middle of the screen (UI hidden, panel closed),
-   then glides to its usual place; only once it stands there do the panel, presets and tab bar come in. */
+   then glides to its usual place while the panel, presets and tab bar come in with it. */
 const INTRO = !matchMedia('(prefers-reduced-motion: reduce)').matches;
 const easeOutBack = (k) => { const c = 1.9; return 1 + (c + 1) * (k - 1) ** 3 + c * (k - 1) ** 2; };
-let introT = INTRO ? 0 : -1, moved = false, revealed = false;
-// step 2: make room for the panel (the character glides to its place) — the UI stays invisible
-function moveToPlace() {
-  moved = true;
-  document.body.classList.add('panel-open');
-}
-// step 3: the character is in place — now the panel, presets and tab bar come in
+let introT = INTRO ? 0 : -1, revealed = false;
+// the character glides to its place while the panel, presets and tab bar come in
 function revealUI() {
   revealed = true;
   document.body.classList.add('panel-open');
@@ -383,8 +381,8 @@ function frame() {
     introT += Math.min(dt, 1 / 30);
     const k = Math.min(1, Math.max(0, (introT - 0.15) / 0.7));   // step 1: pop in at the centre
     hero.root.scale.setScalar(Math.max(0.001, easeOutBack(k)));
-    if (introT > 1.05 && !moved) moveToPlace();
-    if (introT > 1.75 && !revealed) revealUI();
+    // step 2: the character glides to its place and the UI comes in at the same time
+    if (introT > 1.05 && !revealed) revealUI();
     if (k >= 1 && revealed) { hero.root.scale.setScalar(1); introT = -1; }
   }
   if (performance.now() - pointer.last > 4000) pointer.active = false;
