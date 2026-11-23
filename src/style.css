@@ -193,7 +193,9 @@ body.panel-open #panel { width: var(--panel-w); }
 .shape-btn.on { color: var(--ink); }
 .shape-btn.on svg { fill: var(--accent); stroke: var(--accent); }
 /* icon-only "off" tile keeps the grid row height */
-.tile-off { justify-content: flex-start; } /* icon lines up with the icons of captioned tiles */
+/* "off" option (Нет / Ничего): grey icon so it stands apart */
+.tile-off svg, .tile-off:hover svg { fill: #c4c6d6; stroke: #c4c6d6; }
+.tile-off.on svg { fill: #8d8fa3; stroke: #8d8fa3; }
 
 /* jelly slider: thumb and value drop fuse into one liquid shape */
 .jelly { position: relative; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
