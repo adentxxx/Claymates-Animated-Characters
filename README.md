@@ -10,7 +10,7 @@ A browser-based maker for cute, chunky 3D characters. Pick a shape, material, fa
 
 - **10 body shapes**: ball, drop, bean, cube, triangle, pin, heart, cloud, star, ghost. Every shape is an SDF (signed distance field), so it can be reshaped smoothly: width, height, depth, taper and a "hand-sculpted" wobble.
 - **4 materials**: matte, glossy, glow (two-colour gradient with a soft halo) and plush (real fur via shell rendering).
-- **Face**: 6 eye styles, brows, mouth, blush, eye shine; the eyes follow the cursor and blink.
+- **Face**: 5 eye styles, brows, mouth, blush, eye shine; the eyes follow the cursor and blink.
 - **11 emotions** with smooth transitions, from happy and silly to sleepy and dizzy.
 - **15 animations**: idle, bounce, wave, dance, walk, spin, nod, nope, look around, talk, cheer, jelly, shy, float, sleep.
 - **Accessories**: beret, cap, party hat, crown, halo, bow, sprout, antenna, bunny and cat ears; three kinds of glasses; tie, bow tie, scarf. Ears, antennas and sprouts sway with inertia.
