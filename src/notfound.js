@@ -116,7 +116,7 @@ function makeCharacter() {
   ch.root.updateMatrix();
   const pivot = new THREE.Group();
   pivot.add(ch.root);
-  const base = innerWidth < 640 ? 1.5 : 1.9;   // smaller on phones so they fit past the "404"
+  const base = innerWidth < 640 ? 1.25 : 1.9;  // smaller on phones so they fit past the (bigger there) "404"
   const scale = rnd(0.72, 1.0) * base / Math.max(size.y, 1.4);
   pivot.scale.setScalar(scale);
   return { pivot, r: 0.5 * Math.max(size.x * 0.92, size.y * 0.96) * scale };
