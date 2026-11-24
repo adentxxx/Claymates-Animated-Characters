@@ -9,9 +9,18 @@ const FS_VERT = 'varying vec2 vUv; void main(){ vUv = position.xy * 0.5 + 0.5; g
 
 export function createHalo(renderer) {
   const opts = { type: THREE.HalfFloatType, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, depthBuffer: true };
-  const rtMask = new THREE.WebGLRenderTarget(4, 4, opts);
-  const rtA = new THREE.WebGLRenderTarget(4, 4, { ...opts, depthBuffer: false });
-  const rtB = new THREE.WebGLRenderTarget(4, 4, { ...opts, depthBuffer: false });
+  // one set of targets per output size (screen + export), so switching sizes does not reallocate
+  const sets = new Map();
+  function targets(w, h) {
+    const key = w + 'x' + h;
+    let t = sets.get(key);
+    if (!t) {
+      if (sets.size >= 2) { const [k0, old] = sets.entries().next().value; Object.values(old).forEach((r) => r.dispose()); sets.delete(k0); }
+      t = { mask: new THREE.WebGLRenderTarget(w, h, opts), a: new THREE.WebGLRenderTarget(w, h, { ...opts, depthBuffer: false }), b: new THREE.WebGLRenderTarget(w, h, { ...opts, depthBuffer: false }) };
+      sets.set(key, t);
+    } else { sets.delete(key); sets.set(key, t); } // most recently used last
+    return t;
+  }
   const maskMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
   // full-screen triangle-pair + camera for the blur passes
@@ -40,7 +49,7 @@ export function createHalo(renderer) {
 
   // the halo itself: a full-screen layer drawn first, behind everything else in the scene
   const haloMat = new THREE.ShaderMaterial({
-    uniforms: { uTex: { value: rtB.texture }, uC1: { value: new THREE.Color() }, uC2: { value: new THREE.Color() }, uStrength: { value: 0.8 } },
+    uniforms: { uTex: { value: null }, uC1: { value: new THREE.Color() }, uC2: { value: new THREE.Color() }, uStrength: { value: 0.8 } },
     // sits on the far plane: depth-tested, so it only shows where nothing else is drawn
     vertexShader: 'varying vec2 vUv; void main(){ vUv = position.xy * 0.5 + 0.5; gl_Position = vec4(position.xy, 0.9999, 1.0); }',
     fragmentShader: `
@@ -79,7 +88,8 @@ export function createHalo(renderer) {
       haloMat.uniforms.uC2.value.set(c2);
       renderer.getDrawingBufferSize(size);
       const w = Math.max(16, Math.round(size.x / 4)), h = Math.max(16, Math.round(size.y / 4));
-      if (rtMask.width !== w || rtMask.height !== h) { rtMask.setSize(w, h); rtA.setSize(w, h); rtB.setSize(w, h); }
+      const { mask: rtMask, a: rtA, b: rtB } = targets(w, h);
+      haloMat.uniforms.uTex.value = rtB.texture;
 
       // 1) silhouette: everything in the scene in flat white, no background, no particles
       const bg = scene.background, ov = scene.overrideMaterial;

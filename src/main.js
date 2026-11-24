@@ -241,19 +241,37 @@ const embedModal = createEmbedModal({
   toast,
 });
 
-function setExporting(on) {
-  exporting = on;
-  viewShift = panelSpace();
-  applyViewShift();
+// Exports are square and rendered at a fixed, doubled resolution (independent of the window):
+// the drawing buffer is switched to the export size for one frame, copied out, then restored.
+const PNG_SIZE = 2048, VIDEO_SIZE = 1440;
+function renderSquare(size, ctx, transparent) {
+  const savedDpr = renderer.getPixelRatio();
+  renderer.setPixelRatio(1);
+  renderer.setSize(size, size, false);
+  camera.aspect = 1;
+  camera.fov = 32;                       // the site's base field of view: same character size as on screen
+  camera.clearViewOffset();              // centred, no shift for the settings panel
+  camera.updateProjectionMatrix();
+  scene.background = transparent ? null : SITE_BG;
+  draw();
+  ctx.clearRect(0, 0, size, size);
+  ctx.drawImage(canvas, 0, 0, size, size);
+  // back to the on-screen view
+  scene.background = SITE_BG;
+  renderer.setPixelRatio(savedDpr);
+  resize();
+  draw();
+}
+function squareCanvas(size) {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  return [c, c.getContext('2d')];
 }
 function exportPNG() {
-  scene.background = null;
-  setExporting(true); // centred character in the file
-  draw();
-  setExporting(false);
-  scene.background = SITE_BG;
-  canvas.toBlob((blob) => download(blob, 'claymate.png'), 'image/png');
-  toast('PNG с прозрачным фоном сохранён');
+  const [out, ctx] = squareCanvas(PNG_SIZE);
+  renderSquare(PNG_SIZE, ctx, true);
+  out.toBlob((blob) => download(blob, 'claymate.png'), 'image/png');
+  toast(`PNG ${PNG_SIZE}×${PNG_SIZE} с прозрачным фоном сохранён`);
 }
 function download(blob, name) {
   const a = document.createElement('a');
@@ -302,26 +320,13 @@ async function exportVideo(format = 'webm') {
   for (let i = 0, n = Math.round(warm / stepAnim) - 1; i < n; i++) hero.update(stepReal, state, noPointer);
   hero.time = warm - stepAnim; // trims float drift; the first captured frame lands on the loop start
 
-  // Each video frame is drawn centred and transparent, copied into a hidden square canvas,
-  // and then the normal view is drawn again, so the screen never jumps during export.
-  const size = Math.min(canvas.width, canvas.height);
-  const out = document.createElement('canvas');
-  out.width = out.height = size;
-  const octx = out.getContext('2d');
-  const sx = (canvas.width - size) / 2, sy = (canvas.height - size) / 2;
-  const renderFrame = () => {
-    scene.background = transparent ? null : SITE_BG;
-    camera.clearViewOffset();
-    draw();
-    octx.clearRect(0, 0, size, size);
-    octx.drawImage(canvas, sx, sy, size, size, 0, 0, size, size);
-    scene.background = SITE_BG;
-    applyViewShift();
-    draw();
-  };
+  // Each video frame is rendered square at VIDEO_SIZE into a hidden canvas, and then the
+  // normal view is drawn again, so the screen never jumps during export.
+  const [out, octx] = squareCanvas(VIDEO_SIZE);
+  const renderFrame = () => renderSquare(VIDEO_SIZE, octx, transparent);
   const stream = out.captureStream(0);
   const track = stream.getVideoTracks()[0];
-  const rec = new MediaRecorder(stream, { mimeType: type, videoBitsPerSecond: 10e6 });
+  const rec = new MediaRecorder(stream, { mimeType: type, videoBitsPerSecond: 24e6 });
   const chunks = [];
   rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
   const stopped = new Promise((r) => { rec.onstop = r; });
@@ -376,10 +381,10 @@ document.addEventListener('pointerleave', () => { pointer.active = false; });
 // The floating panel covers the right part of the stage, so the view is shifted to keep the
 // character centred in the visible part. Exports drop the shift and come out centred.
 const panelEl = document.getElementById('panel');
-let viewShift = 0, exporting = false;
+let viewShift = 0;
 function panelSpace() {
   if (EMBED) return 0;
-  if (exporting || innerWidth <= 860 || !document.body.classList.contains('panel-open')) return 0;
+  if (innerWidth <= 860 || !document.body.classList.contains('panel-open')) return 0;
   return panelEl.offsetWidth + 16;
 }
 function applyViewShift() {
@@ -432,7 +437,7 @@ if (EMBED && 'IntersectionObserver' in window) {
 // frame-time watchdog: if the average frame is slow for ~2 s, render fewer pixels
 const perf = { t: 0, n: 0, sum: 0 };
 function watchFrameTime(dt) {
-  if (introT >= 0 || exporting || document.hidden) return;
+  if (introT >= 0 || recording || document.hidden) return;
   perf.t += dt; perf.n++; perf.sum += Math.min(dt, 0.1);
   if (perf.t < 2) return;
   const avg = perf.sum / perf.n;
@@ -459,7 +464,7 @@ function frame() {
   if (performance.now() - pointer.last > 4000) pointer.active = false;
   const target = panelSpace();
   if (Math.abs(target - viewShift) > 0.5) {
-    viewShift = exporting ? target : viewShift + (target - viewShift) * Math.min(1, dt * 6);
+    viewShift += (target - viewShift) * Math.min(1, dt * 6);
     applyViewShift();
   }
   hero.update(dt, state, pointer);
