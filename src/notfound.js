@@ -11,6 +11,7 @@ import { DEFAULTS, PALETTE } from './presets.js';
 import { SHAPES } from './sdf.js';
 import { EMOTIONS } from './animations.js';
 import { track } from './analytics.js';
+import { weightWave } from './weightwave.js';
 import './notfound.css';
 
 const home = document.getElementById('home');
@@ -262,7 +263,10 @@ function wake() {
   requestAnimationFrame((t) => { last = t; frame(t); });
 }
 window.__nf = { bodies, tick, tier: TIER, get running() { return running; } }; // debugging handle
+// "404": blurs in letter by letter, then a swell of weight rolls through it (follows the cursor)
+const CODE_GRADIENT = 'linear-gradient(135deg, #5b5cf0 0%, #ff3fbf 55%, #ffc531 100%)';
 (document.fonts ? document.fonts.ready : Promise.resolve()).then(async () => {
+  weightWave(document.getElementById('code'), { gradient: CODE_GRADIENT, light: 300, bold: 820 });
   layout();
   await prepare(COUNT);
   raining = true;

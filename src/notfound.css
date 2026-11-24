@@ -26,3 +26,11 @@ body {
 }
 .nf-btn:hover { background: #2a2a36; transform: translateY(-1px); }
 .nf-btn:focus-visible { outline: 3px solid #5b5cf0; outline-offset: 3px; }
+
+/* weight wave: the gradient moves to the letters (each shows its slice), the parent keeps only the layout */
+.nf-code.ww { position: relative; /* letter offsets are measured from the word */ background: none; -webkit-background-clip: border-box; background-clip: border-box; color: inherit; }
+.ww .ww-ch {
+  display: inline-block; white-space: pre; font-weight: 300; opacity: 0;
+  background-repeat: no-repeat; -webkit-background-clip: text; background-clip: text; color: transparent;
+  will-change: transform, opacity, filter, font-weight;
+}
