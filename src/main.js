@@ -202,9 +202,29 @@ function saveHashSoon() {
 }
 
 function toast(msg) {
+  hideError();
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
   clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2200);
+}
+// red notice for a failed download, with "Try again" that repeats the same request
+const errEl = document.getElementById('toast-error');
+let retryFn = null;
+errEl.querySelector('button').addEventListener('click', () => { const fn = retryFn; hideError(); if (fn) fn(); });
+function showError(msg, retry) {
+  document.getElementById('toast').classList.remove('show');
+  errEl.querySelector('span').textContent = msg;
+  errEl.querySelector('button').hidden = !retry;
+  retryFn = retry || null;
+  errEl.hidden = false;
+  requestAnimationFrame(() => errEl.classList.add('show'));
+  clearTimeout(showError.t); showError.t = setTimeout(hideError, 9000);
+}
+function hideError() {
+  if (errEl.hidden) return;
+  errEl.classList.remove('show');
+  clearTimeout(showError.t);
+  setTimeout(() => { if (!errEl.classList.contains('show')) errEl.hidden = true; }, 250);
 }
 
 /* random character */
@@ -283,10 +303,21 @@ function squareCanvas(size) {
 }
 function exportPNG() {
   track('export_png', characterSummary(state));
-  const [out, ctx] = squareCanvas(PNG_SIZE);
-  renderSquare(PNG_SIZE, ctx, true);
-  out.toBlob((blob) => download(blob, 'claymate.png'), 'image/png');
-  toast(`PNG ${PNG_SIZE}×${PNG_SIZE} with transparent background saved`);
+  const fail = (err) => {
+    track('export_error', { kind: 'png', message: String(err && err.message || err).slice(0, 120) });
+    showError('Couldn’t save the PNG.', exportPNG);
+  };
+  try {
+    const [out, ctx] = squareCanvas(PNG_SIZE);
+    renderSquare(PNG_SIZE, ctx, true);
+    out.toBlob((blob) => {
+      if (!blob || !blob.size) return fail('empty image');
+      download(blob, 'claymate.png');
+      toast(`PNG ${PNG_SIZE}×${PNG_SIZE} with transparent background saved`);
+    }, 'image/png');
+  } catch (err) {
+    fail(err);
+  }
 }
 function download(blob, name) {
   const a = document.createElement('a');
@@ -311,7 +342,7 @@ async function exportVideo(format = 'webm') {
   const type = window.MediaRecorder && VIDEO_TYPES[format].find((t) => MediaRecorder.isTypeSupported(t));
   if (!type) {
     track('export_video_unsupported', { format });
-    toast(format === 'mp4' ? 'This browser can’t record MP4. Open the site in Chrome, Edge or Safari' : 'This browser can’t record WebM. Open the site in Chrome, Edge or Firefox');
+    showError(format === 'mp4' ? 'This browser can’t record MP4. Try Chrome, Edge or Safari.' : 'This browser can’t record WebM. Try Chrome, Edge or Firefox.');
     return;
   }
   const transparent = format === 'webm';
@@ -339,37 +370,46 @@ async function exportVideo(format = 'webm') {
 
   // Each video frame is rendered square at VIDEO_SIZE into a hidden canvas, and then the
   // normal view is drawn again, so the screen never jumps during export.
-  const [out, octx] = squareCanvas(VIDEO_SIZE);
-  const renderFrame = () => renderSquare(VIDEO_SIZE, octx, transparent);
-  const stream = out.captureStream(0);
-  const track = stream.getVideoTracks()[0];
-  const rec = new MediaRecorder(stream, { mimeType: type, videoBitsPerSecond: 24e6 });
   const chunks = [];
-  rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
-  const stopped = new Promise((r) => { rec.onstop = r; });
-  rec.start();
-  const t0 = performance.now();
+  let rec = null, videoTrack = null, failed = null;   // (not "track": that name is the analytics function)
   try {
-    for (let k = 0; k < frames; k++) {
+    const [out, octx] = squareCanvas(VIDEO_SIZE);
+    const renderFrame = () => renderSquare(VIDEO_SIZE, octx, transparent);
+    const stream = out.captureStream(0);
+    videoTrack = stream.getVideoTracks()[0];
+    rec = new MediaRecorder(stream, { mimeType: type, videoBitsPerSecond: 24e6 });
+    rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+    rec.onerror = (e) => { failed = failed || (e.error || new Error('recorder error')); };
+    var stopped = new Promise((r) => { rec.onstop = r; });
+    rec.start();
+    const t0 = performance.now();
+    for (let k = 0; k < frames && !failed; k++) {
       hero.update(stepReal, state, noPointer);
       controls.update();
       renderFrame();
-      track.requestFrame();
+      videoTrack.requestFrame();
       if (k % 10 === 0) toast(`Rendering loop… ${Math.round((k / frames) * 100)}%`);
       // frames go out at video speed so the encoder timestamps match the clip
       const wait = t0 + (k + 1) * stepReal * 1000 - performance.now();
       await new Promise((r) => setTimeout(r, Math.max(0, wait)));
     }
+  } catch (err) {
+    failed = err;
   } finally {
-    rec.stop();
-    await stopped;
-    track.stop();
+    try { if (rec && rec.state !== 'inactive') { rec.stop(); await stopped; } } catch (err) { failed = failed || err; }
+    if (videoTrack) videoTrack.stop();
     hero.endLoop();
     scene.background = SITE_BG;
     applyViewShift();
     paused = false;
     recording = false;
     exportMenu.setBusy(false);
+  }
+  if (!failed && !chunks.length) failed = new Error('empty recording');
+  if (failed) {
+    track('export_error', { kind: format, message: String(failed.message || failed).slice(0, 120) });
+    showError(`Couldn’t record the ${format.toUpperCase()} video.`, () => exportVideo(format));
+    return;
   }
   download(new Blob(chunks, { type: type.split(';')[0] }), `claymate-${state.anim}-loop.${format}`);
   toast(`${real.toFixed(1)} s loop ready${transparent ? ', transparent background' : ''}`);
