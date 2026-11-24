@@ -464,3 +464,20 @@ body.embed .cb, body.intro .cb { display: none !important; }
 /* «Cookie settings» link in the about tooltip */
 .about-cookies { display: block; margin: 0 8px 4px; padding: 0; border: 0; background: none; font: 700 12px Manrope, sans-serif; color: rgba(255,255,255,.55); cursor: pointer; text-align: left; }
 .about-cookies:hover { color: #fff; text-decoration: underline; text-underline-offset: 2px; }
+
+/* «Learn more» link inside the cookie banner text */
+.cb-more { display: inline; padding: 0; border: 0; background: none; font: inherit; font-weight: 700; color: var(--ink); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.cb-more:hover { color: var(--accent); }
+.cb-more:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+/* analytics details modal (shares the .em-* modal look) */
+.pm .em-dialog { max-width: 440px; }
+.pm-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.pm-list li { padding: 12px 14px; border-radius: 14px; background: var(--soft); }
+.pm-name { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.pm-name b { font-size: 14px; font-weight: 800; }
+.pm-name span { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.pm-list p { margin: 6px 0 0; font-size: 13px; line-height: 1.45; color: var(--ink); }
+.pm-list .pm-meta { font-size: 12px; color: var(--muted); }
+.pm-list a { color: var(--ink); font-weight: 700; }
+.pm-note { margin: 14px 0 16px; font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+.pm-note b { color: var(--ink); }

@@ -29,10 +29,10 @@ const COOKIE_SVG = `
   </svg>`;
 
 /**
- * @param {{ onChoice: (granted: boolean) => void }} o
+ * @param {{ onChoice: (granted: boolean) => void, onMore?: () => void }} o
  * @returns {{ open: () => void }}
  */
-export function createCookieBanner({ onChoice }) {
+export function createCookieBanner({ onChoice, onMore }) {
   const banner = document.createElement('div');
   banner.className = 'cb';
   banner.setAttribute('role', 'region');
@@ -44,7 +44,7 @@ export function createCookieBanner({ onChoice }) {
         <div class="cb-plate">${COOKIE_SVG}<i class="cb-crumbs"></i></div>
         <div class="cb-copy">
           <h3>Cookies, freshly baked</h3>
-          <p>We use Yandex Metrica and Google Analytics to see which characters people make. No ads, no selling.</p>
+          <p>We use analytics cookies to see which characters people make. No ads. <button class="cb-more" type="button">Learn more</button></p>
         </div>
       </div>
       <div class="cb-row">
@@ -129,6 +129,7 @@ export function createCookieBanner({ onChoice }) {
     after(0.8, () => fold('Essentials only', false));
   }
   yes.addEventListener('click', accept);
+  q('.cb-more').addEventListener('click', () => onMore && onMore());
   no.addEventListener('click', decline);
 
   function open() {
