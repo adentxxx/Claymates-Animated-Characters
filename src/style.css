@@ -404,3 +404,62 @@ body.embed #panel, body.embed .presets-wrap, body.embed .stage-dock, body.embed 
 .em-steps code { font: 12px ui-monospace, Menlo, Consolas, monospace; background: var(--soft); padding: 1px 5px; border-radius: 6px; }
 .em-warn { margin: 14px 0 0; padding: 10px 12px; border-radius: 12px; background: #fff6e0; color: #7a5200; font-size: 12.5px; line-height: 1.45; }
 @media (prefers-reduced-motion: reduce) { .em-overlay, .em-dialog { transition: none; } }
+
+/* ---------- cookie consent: "Cookie bite" ---------- */
+.cb {
+  position: fixed; left: var(--inset); bottom: calc(var(--inset) + 68px); z-index: 40;   /* above the «i» button and clear of the bottom bar */
+  transform: translateY(var(--cb-y, 0px));
+  background: #fff; border: var(--float-edge); box-shadow: var(--float-shadow); border-radius: 20px;
+  will-change: transform, width, height, opacity;
+  --dough: color-mix(in srgb, #ff6a3d 60%, #ffc531);
+  --chip: color-mix(in srgb, #ff6a3d 36%, #000);
+}
+.cb[hidden] { display: none; }
+.cb-body { position: absolute; left: 0; top: 0; padding: 18px; will-change: opacity, transform; }
+.cb-top { display: flex; gap: 14px; align-items: center; }
+.cb-plate { position: relative; flex: none; width: 64px; height: 64px; }
+.cb-cookie { position: absolute; inset: 0; width: 64px; height: 64px; overflow: visible; will-change: transform; }
+.cb .d0 { stop-color: color-mix(in srgb, var(--dough) 62%, #fff); }
+.cb .d1 { stop-color: var(--dough); }
+.cb .d2 { stop-color: color-mix(in srgb, var(--dough) 80%, var(--chip)); }
+.cb .c0 { stop-color: color-mix(in srgb, var(--chip) 72%, var(--dough)); }
+.cb .c1 { stop-color: color-mix(in srgb, var(--chip) 78%, #000); }
+.cb .n0 { stop-color: color-mix(in srgb, var(--dough) 74%, var(--chip)); }
+.cb .n1 { stop-color: color-mix(in srgb, var(--dough) 74%, var(--chip)); stop-opacity: 0; }
+.cb .edge { fill: color-mix(in srgb, var(--dough) 58%, var(--chip)); }
+.cb .dough { fill: url(#cb-dough); }
+.cb .dent { fill: url(#cb-dent); }
+.cb .chips circle { fill: url(#cb-chip); }
+.cb .keep { fill: #fff; }                       /* mask: white keeps */
+.cb .cb-bite-cuts circle { fill: #000; }        /* mask: black is the bite */
+.cb-crumbs { position: absolute; left: 0; top: 0; width: 0; height: 0; }
+.cb-crumbs i { position: absolute; left: 0; top: 0; width: 5px; height: 5px; margin: -2.5px; border-radius: 2px; background: var(--dough); opacity: 0; will-change: transform, opacity; }
+.cb-crumbs i:nth-child(3n) { background: var(--chip); }
+.cb-copy h3 { margin: 0; font: 800 16px/1.25 Manrope, sans-serif; letter-spacing: -.02em; color: var(--ink); }
+.cb-copy p { margin: 4px 0 0; font-size: 13px; line-height: 1.45; color: var(--muted); }
+.cb-row { display: flex; gap: 8px; margin-top: 16px; }
+.cb-btn {
+  flex: 1; height: 44px; border: 0; border-radius: 12px; cursor: pointer; will-change: transform;
+  font: 800 14px Manrope, sans-serif; letter-spacing: -.01em; -webkit-tap-highlight-color: transparent;
+}
+.cb-no { background: var(--soft); color: var(--ink); }
+.cb-no:hover { background: #eceef4; }
+.cb-yes { background: var(--ink); color: #fff; }
+.cb-yes:hover { background: #2a2a36; }
+.cb-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.cb-done {
+  position: absolute; left: 50%; top: 50%; display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 18px 0 13px; white-space: nowrap;
+  font-size: 14px; font-weight: 700; color: var(--ink); opacity: 0; pointer-events: none; will-change: opacity, transform;
+}
+.cb-done svg { width: 20px; height: 20px; border-radius: 50%; background: #e7e8ef; }
+.cb-done.is-yes svg { background: #2fd14a; }
+.cb-done path { fill: none; stroke: var(--ink); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1 1; }
+.cb-done.is-yes path { stroke: #fff; }
+body.embed .cb, body.intro .cb { display: none !important; }
+/* phones: the settings sheet owns the bottom, so the banner sits at the top under the presets */
+@media (max-width: 860px) {
+  .cb { left: 50%; bottom: auto; top: 64px; transform: translate(-50%, calc(var(--cb-y, 0px) * -1)); }
+}
+/* «Cookie settings» link in the about tooltip */
+.about-cookies { display: block; margin: 0 8px 4px; padding: 0; border: 0; background: none; font: 700 12px Manrope, sans-serif; color: rgba(255,255,255,.55); cursor: pointer; text-align: left; }
+.about-cookies:hover { color: #fff; text-decoration: underline; text-underline-offset: 2px; }

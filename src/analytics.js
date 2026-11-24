@@ -5,6 +5,7 @@
 // - Metrica runs with Webvisor (session recordings), click map, link and scroll tracking.
 // - Every event goes to both services: a goal + visit parameters in Metrica (the parameters form a
 //   tree under Reports → Visit parameters, no setup needed), an event with parameters in GA4.
+// - Nothing loads until the visitor accepts the cookie banner; the choice is remembered.
 // - Off in the embed view (the character inside someone else's site) and on localhost,
 //   unless the URL has ?analytics-debug (then every event is also printed to the console).
 import { YANDEX_METRIKA_ID as YM, GA4_ID as GA } from './analytics.config.js';
@@ -12,7 +13,22 @@ import { YANDEX_METRIKA_ID as YM, GA4_ID as GA } from './analytics.config.js';
 const params = new URLSearchParams(location.search);
 const DEBUG = params.has('analytics-debug');
 const LOCAL = /^(localhost|127\.|\[::1\])/.test(location.hostname);
-const ENABLED = (YM || GA) && !params.has('embed') && (!LOCAL || DEBUG);
+// counters exist for this page view (consent decides whether they actually start)
+export const ANALYTICS_AVAILABLE = Boolean((YM || GA) && !params.has('embed') && (!LOCAL || DEBUG)) || (DEBUG && !params.has('embed'));
+
+/* ---------- consent: nothing loads and nothing is sent until the visitor accepts ---------- */
+const CONSENT_KEY = 'claymates.consent';
+export function getConsent() {
+  try { return localStorage.getItem(CONSENT_KEY); } catch { return null; }   // 'granted' | 'denied' | null
+}
+let started = false, allowed = false;
+export function setConsent(granted) {
+  try { localStorage.setItem(CONSENT_KEY, granted ? 'granted' : 'denied'); } catch { /* private mode */ }
+  allowed = granted;
+  if (granted) start();
+  else if (started && GA) window.gtag('consent', 'update', { analytics_storage: 'denied' });
+  if (DEBUG) console.info('[analytics] consent', granted ? 'granted' : 'denied');
+}
 
 function loadScript(src) {
   const s = document.createElement('script');
@@ -24,7 +40,9 @@ const whenIdle = (fn) => {
   if (document.readyState === 'complete') go(); else addEventListener('load', go, { once: true });
 };
 
-if (ENABLED) {
+function start() {
+  if (started || !ANALYTICS_AVAILABLE || !(YM || GA)) return;
+  started = true;
   if (YM) {
     // official stub: calls are queued until tag.js arrives
     window.ym = window.ym || function () { (window.ym.a = window.ym.a || []).push(arguments); };
@@ -32,12 +50,12 @@ if (ENABLED) {
     window.ym(Number(YM), 'init', {
       webvisor: true, clickmap: true, trackLinks: true, accurateTrackBounce: true,
       trackHash: false,            // the hash holds the character and changes on every edit
-      ecommerce: false,
     });
   }
   if (GA) {
     window.dataLayer = window.dataLayer || [];
     window.gtag = function () { window.dataLayer.push(arguments); };
+    window.gtag('consent', 'default', { analytics_storage: 'granted', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied' });
     window.gtag('js', new Date());
     window.gtag('config', GA, { page_location: location.origin + location.pathname, page_title: document.title });
   }
@@ -46,6 +64,7 @@ if (ENABLED) {
     if (GA) loadScript('https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(GA));
   });
 }
+if (getConsent() === 'granted') { allowed = true; start(); }
 
 /**
  * Send an event to both services.
@@ -53,8 +72,8 @@ if (ENABLED) {
  * @param {object} [data] flat parameters, e.g. { format: 'mp4', shape: 'cube' }
  */
 export function track(name, data = {}) {
-  if (DEBUG) console.info('[analytics]', name, data);
-  if (!ENABLED) return;
+  if (DEBUG) console.info('[analytics]', name, data, allowed ? '' : '(not sent: no consent)');
+  if (!started || !allowed) return;
   if (YM) {
     window.ym(Number(YM), 'reachGoal', name, data);
     // visit parameters: a tree "event → param → value" that Metrica counts per visit

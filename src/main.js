@@ -8,7 +8,8 @@ import { createActionMenu } from './exportmenu.js';
 import { createEmbedModal } from './embedmodal.js';
 import { createHalo } from './halo.js';
 import { createAbout } from './about.js';
-import { track, trackSetting, characterSummary } from './analytics.js';
+import { track, trackSetting, characterSummary, ANALYTICS_AVAILABLE, getConsent, setConsent } from './analytics.js';
+import { createCookieBanner } from './cookiebanner.js';
 import { DEFAULTS, PRESETS, PALETTE, presetState } from './presets.js';
 import { SHAPES } from './sdf.js';
 import { normalizeMaterial } from './materials.js';
@@ -239,7 +240,12 @@ const exportMenu = createActionMenu(document.getElementById('export-menu'), [
   { id: 'link', label: 'Copy link', icon: ICON.link },
   { id: 'embed', label: 'Export code', icon: ICON.embed, soon: true }, // enabled once the site is published
 ], { trigger: stageBar.actionEl, up: true, onSoon: (id) => track('soon_click', { item: id }), onRun: (id) => ({ png: exportPNG, webm: () => exportVideo('webm'), mp4: () => exportVideo('mp4'), link: copyLink, embed: () => embedModal.open() })[id]() });
-createAbout(document.getElementById('about'));
+// cookie consent: shown once the intro is over, only while the visitor hasn't chosen
+const cookieBanner = ANALYTICS_AVAILABLE && !EMBED ? createCookieBanner({ onChoice: (granted) => setConsent(granted) }) : null;
+if (cookieBanner && !getConsent()) setTimeout(function waitIntro() {
+  if (document.body.classList.contains('intro')) setTimeout(waitIntro, 300); else setTimeout(() => cookieBanner.open(), 700);
+}, 300);
+createAbout(document.getElementById('about'), cookieBanner ? { onCookies: () => cookieBanner.open() } : {});
 
 const embedModal = createEmbedModal({
   getUrl: () => `${location.origin}${location.pathname}?embed#${encodeState()}`,
