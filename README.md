@@ -1,42 +1,43 @@
-# Claymates — пластилиновые 3D-персонажи
+# ClayMates — 3D Character Maker with Animations
 
-**Сайт:** https://adentxxx.github.io/Claymates-Animated-Characters/ · обновить публикацию: `npm run deploy`
+**Live:** https://adentxxx.github.io/Claymates-Animated-Characters/
 
-Веб-конструктор объёмных персонажей в стиле пластилина / виниловых игрушек / плюша.
-Настраиваешь форму, лицо, эмоцию, руки-ноги и аксессуары — персонаж сразу оживает с готовыми анимациями.
+A browser-based maker for cute, chunky 3D characters. Pick a shape, material, face, emotion, limbs and accessories, and the character comes alive with ready-made animations.
 
 ![three.js](https://img.shields.io/badge/three.js-r170-black) ![vite](https://img.shields.io/badge/vite-5-646cff)
 
-## Возможности
+## Features
 
-- **11 базовых форм**: шарик, капля, фасолина, кубик, треугольник, кегля, сердце, облачко, звезда, бумеранг, призрак.
-  Каждая форма — это SDF (signed distance field), поэтому её можно плавно деформировать: ширина, высота, толщина, сужение, изгиб и «ручная лепка» (неровности как у настоящего пластилина).
-- **4 фактуры**: пластилин (отпечатки и вмятинки), винил, глянец, плюш (настоящий объёмный ворс через shell-рендеринг).
-- **Лицо**: 6 типов глаз, брови, рот, румянец, блики; глаза следят за курсором и моргают.
-- **11 эмоций**: спокойствие, радость, восторг, любовь, дурачусь, хитрый, удивление, грусть (со слезой), злость, сонный, головокружение — с плавными переходами.
-- **15 анимаций**: покой, прыжки (squash & stretch), привет, танец, шаг, кружение, да/нет, осмотр, болтовня, ура, желе, стеснение, парение, сон.
-- **Аксессуары**: берет, кепка, колпак, корона, нимб, бантик, росток, антенна, ушки; очки трёх видов; галстук, бабочка, шарф. Ушки/антенна/росток покачиваются по инерции.
-- **Экспорт**: PNG с прозрачным фоном, 4-секундное видео (WebM), ссылка на персонажа (всё состояние в URL).
-- 12 готовых персонажей и кнопка «Случайный».
+- **10 body shapes**: ball, drop, bean, cube, triangle, pin, heart, cloud, star, ghost. Every shape is an SDF (signed distance field), so it can be reshaped smoothly: width, height, depth, taper and a "hand-sculpted" wobble.
+- **4 materials**: matte, glossy, glow (two-colour gradient with a soft halo) and plush (real fur via shell rendering).
+- **Face**: 6 eye styles, brows, mouth, blush, eye shine; the eyes follow the cursor and blink.
+- **11 emotions** with smooth transitions, from happy and silly to sleepy and dizzy.
+- **15 animations**: idle, bounce, wave, dance, walk, spin, nod, nope, look around, talk, cheer, jelly, shy, float, sleep.
+- **Accessories**: beret, cap, party hat, crown, halo, bow, sprout, antenna, bunny and cat ears; three kinds of glasses; tie, bow tie, scarf. Ears, antennas and sprouts sway with inertia.
+- **Export**: square PNG 2048×2048 with a transparent background, seamless looping video 1440×1440 as WebM (transparent) or MP4, and a shareable link (the whole character lives in the URL).
+- 9 ready-made characters and a "Random" button.
 
-## Запуск
+## Run locally
 
 ```bash
 npm install
 npm run dev
 ```
 
-Откройте http://localhost:5173.
+Open http://localhost:5173.
 
-Сборка для продакшна: `npm run build` (результат в `dist/`, можно залить на Vercel / Netlify / GitHub Pages).
+- Production build: `npm run build` (output in `dist/`).
+- Publish to GitHub Pages: `npm run deploy` (builds and pushes `dist/` to the `gh-pages` branch).
 
-## Как это устроено
+## How it works
 
-| Файл | Что внутри |
+| File | What's inside |
 |---|---|
-| `src/sdf.js` | SDF-примитивы, каталог форм, деформации, трассировка поверхности для размещения лица и аксессуаров |
-| `src/mesher.js` | Surface Nets — превращает SDF в гладкий меш, нормали по градиенту, запечённый ambient occlusion |
-| `src/materials.js` | Шейдерные материалы: процедурная фактура пластилина, плюшевый мех |
-| `src/character.js` | Сборка персонажа: тело, глаза, рот, руки, ноги, аксессуары, моргание, частицы |
-| `src/animations.js` | Эмоции и генераторы поз для анимаций |
-| `src/ui.js`, `src/presets.js` | Панель настроек и готовые персонажи |
+| `src/sdf.js` | SDF primitives, shape catalogue, deformations, surface tracing to place the face and accessories |
+| `src/mesher.js` | Surface Nets: turns the SDF into a smooth mesh, gradient normals, baked ambient occlusion |
+| `src/materials.js` | Shader materials: matte, glossy, glow, plush fur |
+| `src/halo.js` | Screen-space glow halo for the glow material |
+| `src/character.js` | Character assembly: body, eyes, mouth, arms, legs, accessories, blinking, particles |
+| `src/animations.js` | Emotions and pose generators for the animations |
+| `src/ui.js`, `src/presets.js` | Settings panel and ready-made characters |
+| `src/main.js` | Renderer, camera, exports, URL state |

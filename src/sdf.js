@@ -131,16 +131,16 @@ const star2b = (x, y) => {
 
 /* ---------------- shape catalogue ---------------- */
 export const SHAPES = {
-  ball:     { label: 'Шарик',     depth: 1,    f: (x, y, z) => sph(x, y, z, 0, 0.95, 0, 0.95) },
-  drop:     { label: 'Капля',     depth: 1,    f: (x, y, z) => roundCone(x, y, z, 0, 0.75, 0, 0, 1.82, 0, 0.75, 0.16) },
-  bean:     { label: 'Фасолина',  depth: 1,    f: (x, y, z) => capsule(x, y, z, 0, 0.6, 0, 0, 1.42, 0, 0.6) },
-  cube:     { label: 'Кубик',     depth: 1,    f: (x, y, z) => roundBox(x, y - 0.8, z, 0.82, 0.8, 0.82, 0.3) },
-  triangle: { label: 'Треугольник', depth: 1,  f: (x, y, z) => inflate('tri', tri2b, x, y, z, 0.12, 0.42, 0.3) },
-  pin:      { label: 'Кегля',     depth: 1,    f: (x, y, z) => smin(sph(x, y, z, 0, 0.68, 0, 0.68), sph(x, y, z, 0, 1.72, 0, 0.4), 0.55) },
-  heart:    { label: 'Сердце',    depth: 0.8,  f: (x, y, z) => smin(
+  ball:     { label: 'Ball',     depth: 1,    f: (x, y, z) => sph(x, y, z, 0, 0.95, 0, 0.95) },
+  drop:     { label: 'Drop',     depth: 1,    f: (x, y, z) => roundCone(x, y, z, 0, 0.75, 0, 0, 1.82, 0, 0.75, 0.16) },
+  bean:     { label: 'Bean',  depth: 1,    f: (x, y, z) => capsule(x, y, z, 0, 0.6, 0, 0, 1.42, 0, 0.6) },
+  cube:     { label: 'Cube',     depth: 1,    f: (x, y, z) => roundBox(x, y - 0.8, z, 0.82, 0.8, 0.82, 0.3) },
+  triangle: { label: 'Triangle', depth: 1,  f: (x, y, z) => inflate('tri', tri2b, x, y, z, 0.12, 0.42, 0.3) },
+  pin:      { label: 'Pin',     depth: 1,    f: (x, y, z) => smin(sph(x, y, z, 0, 0.68, 0, 0.68), sph(x, y, z, 0, 1.72, 0, 0.4), 0.55) },
+  heart:    { label: 'Heart',    depth: 0.8,  f: (x, y, z) => smin(
     roundCone(x, y, z, -0.46, 1.32, 0, 0, 0.22, 0, 0.52, 0.14),
     roundCone(x, y, z, 0.46, 1.32, 0, 0, 0.22, 0, 0.52, 0.14), 0.12) },
-  cloud:    { label: 'Облачко',   depth: 0.9,  f: (x, y, z) => {
+  cloud:    { label: 'Cloud',   depth: 0.9,  f: (x, y, z) => {
     let d = sph(x, y, z, 0, 0.92, 0, 0.7);
     d = smin(d, sph(x, y, z, -0.62, 0.6, 0, 0.5), 0.28);
     d = smin(d, sph(x, y, z, 0.62, 0.6, 0, 0.5), 0.28);
@@ -148,8 +148,8 @@ export const SHAPES = {
     d = smin(d, sph(x, y, z, 0.4, 1.46, 0, 0.38), 0.28);
     return d;
   } },
-  star:     { label: 'Звезда',    depth: 1,    f: (x, y, z) => inflate('star', star2b, x, y, z, 0.12, 0.5, 0.22) },
-  ghost:    { label: 'Призрак',   depth: 0.95, f: (x, y, z) => {
+  star:     { label: 'Star',    depth: 1,    f: (x, y, z) => inflate('star', star2b, x, y, z, 0.12, 0.5, 0.22) },
+  ghost:    { label: 'Ghost',   depth: 0.95, f: (x, y, z) => {
     let d = capsule(x, y, z, 0, 0.75, 0, 0, 1.25, 0, 0.72);
     // wavy hem
     const hem = 0.25 + 0.07 * Math.cos(x * 9);

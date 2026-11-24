@@ -161,7 +161,7 @@ const stageItems = STAGES.map((st, i) => ({ id: st.id, title: st.title, key: Str
 const stageBar = createStageBar(document.getElementById('stagebar'), stageItems, {
   initial: ui.stage,
   onSelect: (id) => ui.setStage(id),
-  action: { id: 'download', title: 'Скачать', onClick: () => {} }, // opens the action menu below
+  action: { id: 'download', title: 'Download', onClick: () => {} }, // opens the action menu below
 });
 window.addEventListener('keydown', (e) => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -229,17 +229,17 @@ const ICON = {
 };
 // the download icon in the stage tab bar opens this menu
 const exportMenu = createActionMenu(document.getElementById('export-menu'), [
-  { id: 'png', label: 'Скачать PNG', icon: ICON.png },
-  { id: 'webm', label: 'Скачать видео WebM', icon: ICON.video },
-  { id: 'mp4', label: 'Скачать видео MP4', icon: ICON.video },
-  { id: 'link', label: 'Скопировать ссылку', icon: ICON.link },
-  { id: 'embed', label: 'Экспортировать код', icon: ICON.embed, soon: true }, // enabled once the site is published
+  { id: 'png', label: 'Download PNG', icon: ICON.png },
+  { id: 'webm', label: 'Download WebM video', icon: ICON.video },
+  { id: 'mp4', label: 'Download MP4 video', icon: ICON.video },
+  { id: 'link', label: 'Copy link', icon: ICON.link },
+  { id: 'embed', label: 'Export code', icon: ICON.embed, soon: true }, // enabled once the site is published
 ], { trigger: stageBar.actionEl, up: true, onRun: (id) => ({ png: exportPNG, webm: () => exportVideo('webm'), mp4: () => exportVideo('mp4'), link: copyLink, embed: () => embedModal.open() })[id]() });
 createAbout(document.getElementById('about'));
 
 const embedModal = createEmbedModal({
   getUrl: () => `${location.origin}${location.pathname}?embed#${encodeState()}`,
-  getTitle: () => 'Claymates — анимированный персонаж',
+  getTitle: () => 'ClayMates animated character',
   toast,
 });
 
@@ -273,7 +273,7 @@ function exportPNG() {
   const [out, ctx] = squareCanvas(PNG_SIZE);
   renderSquare(PNG_SIZE, ctx, true);
   out.toBlob((blob) => download(blob, 'claymate.png'), 'image/png');
-  toast(`PNG ${PNG_SIZE}×${PNG_SIZE} с прозрачным фоном сохранён`);
+  toast(`PNG ${PNG_SIZE}×${PNG_SIZE} with transparent background saved`);
 }
 function download(blob, name) {
   const a = document.createElement('a');
@@ -297,7 +297,7 @@ async function exportVideo(format = 'webm') {
   if (recording) return;
   const type = window.MediaRecorder && VIDEO_TYPES[format].find((t) => MediaRecorder.isTypeSupported(t));
   if (!type) {
-    toast(format === 'mp4' ? 'Этот браузер не записывает MP4 — откройте сайт в Chrome, Edge или Safari' : 'Этот браузер не записывает WebM — откройте сайт в Chrome, Edge или Firefox');
+    toast(format === 'mp4' ? 'This browser can’t record MP4. Open the site in Chrome, Edge or Safari' : 'This browser can’t record WebM. Open the site in Chrome, Edge or Firefox');
     return;
   }
   const transparent = format === 'webm';
@@ -340,7 +340,7 @@ async function exportVideo(format = 'webm') {
       controls.update();
       renderFrame();
       track.requestFrame();
-      if (k % 10 === 0) toast(`Собираю цикл… ${Math.round((k / frames) * 100)}%`);
+      if (k % 10 === 0) toast(`Rendering loop… ${Math.round((k / frames) * 100)}%`);
       // frames go out at video speed so the encoder timestamps match the clip
       const wait = t0 + (k + 1) * stepReal * 1000 - performance.now();
       await new Promise((r) => setTimeout(r, Math.max(0, wait)));
@@ -357,12 +357,12 @@ async function exportVideo(format = 'webm') {
     exportMenu.setBusy(false);
   }
   download(new Blob(chunks, { type: type.split(';')[0] }), `claymate-${state.anim}-loop.${format}`);
-  toast(`Цикл ${real.toFixed(1).replace('.', ',')} с готов${transparent ? ', фон прозрачный' : ''}`);
+  toast(`${real.toFixed(1)} s loop ready${transparent ? ', transparent background' : ''}`);
 }
 async function copyLink() {
   history.replaceState(null, '', '#' + encodeState());
-  try { await navigator.clipboard.writeText(location.href); toast('Ссылка на персонажа скопирована'); }
-  catch { toast('Ссылка в адресной строке'); }
+  try { await navigator.clipboard.writeText(location.href); toast('Character link copied'); }
+  catch { toast('The link is in the address bar'); }
 }
 
 /* ---------------- pointer ---------------- */

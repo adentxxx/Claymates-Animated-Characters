@@ -37,9 +37,9 @@ export function createStageBar(root, items, { initial, onSelect, action = null }
   root.innerHTML = `
     <i class="sb-tail"></i>
     <div class="sb-tip" role="tooltip">${all.map((it) => `<span class="sb-lab${it.key ? '' : ' sb-lab--plain'}">${it.title}${it.key ? `<kbd>${it.key}</kbd>` : ''}</span>`).join('')}</div>
-    <div class="sb-bar" role="tablist" aria-label="Этапы настройки">
+    <div class="sb-bar" role="tablist" aria-label="Editor stages">
       <i class="sb-hl"></i>
-      ${items.map((it) => `<button class="sb-tool" role="tab" aria-label="${it.title}, клавиша ${it.key}">${svg(ICONS[it.id])}</button>`).join('')}
+      ${items.map((it) => `<button class="sb-tool" role="tab" aria-label="${it.title}, key ${it.key}">${svg(ICONS[it.id])}</button>`).join('')}
       ${action ? `<i class="sb-sep"></i><button class="sb-tool sb-action" aria-haspopup="menu" aria-expanded="false" aria-label="${action.title}">${svg(ICONS[action.id])}</button>` : ''}
     </div>`;
   const q = (sel) => root.querySelector(sel);

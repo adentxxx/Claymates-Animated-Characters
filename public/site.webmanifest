@@ -1,8 +1,8 @@
 {
-  "name": "ClayMates — конструктор 3D-персонажей",
+  "name": "ClayMates — 3D Character Maker",
   "short_name": "ClayMates",
-  "description": "Собери объёмного 3D-персонажа с эмоциями, аксессуарами и анимацией.",
-  "lang": "ru",
+  "description": "Create a cute 3D character with emotions, accessories and animations.",
+  "lang": "en",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

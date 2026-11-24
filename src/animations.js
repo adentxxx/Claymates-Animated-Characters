@@ -1,17 +1,17 @@
 // Emotions (face targets) and animation presets (pose generators).
 
 export const EMOTIONS = {
-  neutral:   { label: 'Спокойно',   icon: '😐', eyes: ['base', 'base'], open: 1, scale: 1, brow: 0, browLift: 0, c: 0.1, mo: 0, w: 0.8, smirk: 0, wavy: 0, tongue: 0, blush: 0.2 },
-  happy:     { label: 'Радость',    icon: '🙂', eyes: ['base', 'base'], open: 1, scale: 1, brow: -0.05, browLift: 0.02, c: 1, mo: 0.05, w: 1, smirk: 0, wavy: 0, tongue: 0, blush: 0.6 },
-  joy:       { label: 'Восторг',    icon: '😄', eyes: ['happy', 'happy'], open: 1, scale: 1, brow: -0.1, browLift: 0.05, c: 1, mo: 0.75, w: 1.15, smirk: 0, wavy: 0, tongue: 0, blush: 1, fx: 'star' },
-  love:      { label: 'Любовь',     icon: '😍', eyes: ['heart', 'heart'], open: 1, scale: 1, brow: -0.1, browLift: 0.03, c: 1, mo: 0.3, w: 0.9, smirk: 0, wavy: 0, tongue: 0, blush: 1, fx: 'heart' },
-  silly:     { label: 'Дурачусь',   icon: '😜', eyes: ['happy', 'base'], open: 1, scale: 1, brow: 0.15, browLift: 0.03, c: 1, mo: 0.5, w: 1, smirk: 0.2, wavy: 0, tongue: 1, blush: 0.6 },
-  smug:      { label: 'Хитрый',     icon: '😏', eyes: ['base', 'base'], open: 0.5, scale: 1, brow: 0.25, browLift: 0.0, c: 0.45, mo: 0, w: 0.8, smirk: 0.8, wavy: 0, tongue: 0, blush: 0.2 },
-  surprised: { label: 'Удивление',  icon: '😮', eyes: ['base', 'base'], open: 1.1, scale: 1.3, brow: -0.15, browLift: 0.09, c: 0, mo: 0.95, w: 0.42, smirk: 0, wavy: 0, tongue: 0, blush: 0 },
-  sad:       { label: 'Грусть',     icon: '😢', eyes: ['base', 'base'], open: 0.8, scale: 1, brow: -0.5, browLift: 0.03, c: -0.9, mo: 0.05, w: 0.75, smirk: 0, wavy: 0, tongue: 0, blush: 0, tear: 1 },
-  angry:     { label: 'Злость',     icon: '😠', eyes: ['base', 'base'], open: 0.75, scale: 0.95, brow: 0.6, browLift: -0.02, c: -0.7, mo: 0.15, w: 0.85, smirk: 0, wavy: 0, tongue: 0, blush: 0.4 },
-  sleepy:    { label: 'Сонный',     icon: '😴', eyes: ['sleep', 'sleep'], open: 1, scale: 1, brow: -0.1, browLift: 0, c: 0.1, mo: 0.18, w: 0.45, smirk: 0, wavy: 0, tongue: 0, blush: 0.3, fx: 'z' },
-  dizzy:     { label: 'Головокружение', icon: '😵', eyes: ['x', 'x'], open: 1, scale: 1, brow: -0.2, browLift: 0.04, c: -0.2, mo: 0.25, w: 0.7, smirk: 0, wavy: 1, tongue: 0, blush: 0 },
+  neutral:   { label: 'Calm',   icon: '😐', eyes: ['base', 'base'], open: 1, scale: 1, brow: 0, browLift: 0, c: 0.1, mo: 0, w: 0.8, smirk: 0, wavy: 0, tongue: 0, blush: 0.2 },
+  happy:     { label: 'Happy',    icon: '🙂', eyes: ['base', 'base'], open: 1, scale: 1, brow: -0.05, browLift: 0.02, c: 1, mo: 0.05, w: 1, smirk: 0, wavy: 0, tongue: 0, blush: 0.6 },
+  joy:       { label: 'Joy',    icon: '😄', eyes: ['happy', 'happy'], open: 1, scale: 1, brow: -0.1, browLift: 0.05, c: 1, mo: 0.75, w: 1.15, smirk: 0, wavy: 0, tongue: 0, blush: 1, fx: 'star' },
+  love:      { label: 'Love',     icon: '😍', eyes: ['heart', 'heart'], open: 1, scale: 1, brow: -0.1, browLift: 0.03, c: 1, mo: 0.3, w: 0.9, smirk: 0, wavy: 0, tongue: 0, blush: 1, fx: 'heart' },
+  silly:     { label: 'Silly',   icon: '😜', eyes: ['happy', 'base'], open: 1, scale: 1, brow: 0.15, browLift: 0.03, c: 1, mo: 0.5, w: 1, smirk: 0.2, wavy: 0, tongue: 1, blush: 0.6 },
+  smug:      { label: 'Smug',     icon: '😏', eyes: ['base', 'base'], open: 0.5, scale: 1, brow: 0.25, browLift: 0.0, c: 0.45, mo: 0, w: 0.8, smirk: 0.8, wavy: 0, tongue: 0, blush: 0.2 },
+  surprised: { label: 'Surprised',  icon: '😮', eyes: ['base', 'base'], open: 1.1, scale: 1.3, brow: -0.15, browLift: 0.09, c: 0, mo: 0.95, w: 0.42, smirk: 0, wavy: 0, tongue: 0, blush: 0 },
+  sad:       { label: 'Sad',     icon: '😢', eyes: ['base', 'base'], open: 0.8, scale: 1, brow: -0.5, browLift: 0.03, c: -0.9, mo: 0.05, w: 0.75, smirk: 0, wavy: 0, tongue: 0, blush: 0, tear: 1 },
+  angry:     { label: 'Angry',     icon: '😠', eyes: ['base', 'base'], open: 0.75, scale: 0.95, brow: 0.6, browLift: -0.02, c: -0.7, mo: 0.15, w: 0.85, smirk: 0, wavy: 0, tongue: 0, blush: 0.4 },
+  sleepy:    { label: 'Sleepy',     icon: '😴', eyes: ['sleep', 'sleep'], open: 1, scale: 1, brow: -0.1, browLift: 0, c: 0.1, mo: 0.18, w: 0.45, smirk: 0, wavy: 0, tongue: 0, blush: 0.3, fx: 'z' },
+  dizzy:     { label: 'Dizzy', icon: '😵', eyes: ['x', 'x'], open: 1, scale: 1, brow: -0.2, browLift: 0.04, c: -0.2, mo: 0.25, w: 0.7, smirk: 0, wavy: 1, tongue: 0, blush: 0 },
 };
 
 export const POSE_KEYS = ['rootY', 'rootRotY', 'px', 'py', 'pz', 'squash', 'aZ', 'aX', 'aE', 'bZ', 'bX', 'bE', 'lA', 'lB', 'lookX', 'lookY', 'mouth', 'blush', 'eyeOpen'];
@@ -30,21 +30,21 @@ const ease = (x) => x * x * (3 - 2 * x);
 // Every animation is periodic: all its motions repeat exactly after `period` seconds
 // (at speed 1), so an exported video loops without a seam.
 export const ANIMS = {
-  idle:   { label: 'Покой',      icon: '🫧', period: 6 },
-  bounce: { label: 'Прыжки',     icon: '🦘', period: 1 },
-  wave:   { label: 'Привет',     icon: '👋', period: TAU / 1.5 },
-  dance:  { label: 'Танец',      icon: '💃', period: 2 / 1.1 },
-  walk:   { label: 'Шаг',        icon: '🚶', period: 1 / 1.3 },
-  spin:   { label: 'Кружится',   icon: '🌀', period: 1 / 0.55 },
-  nod:    { label: 'Да-да',      icon: '🙆', period: 1 / 1.2 },
-  shake:  { label: 'Не-а',       icon: '🙅', period: 2 },
-  look:   { label: 'Осмотр',     icon: '👀', period: 8 },
-  talk:   { label: 'Болтает',    icon: '💬', period: 4 },
-  cheer:  { label: 'Ура!',       icon: '🙌', period: 1 / 1.5 },
-  jelly:  { label: 'Желе',       icon: '🍮', period: 1.25 },
-  shy:    { label: 'Стесняется', icon: '🙈', period: TAU / 0.8 },
-  float:  { label: 'Парит',      icon: '🎈', period: TAU / 0.8 },
-  sleep:  { label: 'Спит',       icon: '💤', period: TAU / 1.3 },
+  idle:   { label: 'Idle',      icon: '🫧', period: 6 },
+  bounce: { label: 'Bounce',     icon: '🦘', period: 1 },
+  wave:   { label: 'Wave',     icon: '👋', period: TAU / 1.5 },
+  dance:  { label: 'Dance',      icon: '💃', period: 2 / 1.1 },
+  walk:   { label: 'Walk',        icon: '🚶', period: 1 / 1.3 },
+  spin:   { label: 'Spin',   icon: '🌀', period: 1 / 0.55 },
+  nod:    { label: 'Nod',      icon: '🙆', period: 1 / 1.2 },
+  shake:  { label: 'Nope',       icon: '🙅', period: 2 },
+  look:   { label: 'Look around',     icon: '👀', period: 8 },
+  talk:   { label: 'Talk',    icon: '💬', period: 4 },
+  cheer:  { label: 'Cheer!',       icon: '🙌', period: 1 / 1.5 },
+  jelly:  { label: 'Jelly',       icon: '🍮', period: 1.25 },
+  shy:    { label: 'Shy', icon: '🙈', period: TAU / 0.8 },
+  float:  { label: 'Float',      icon: '🎈', period: TAU / 0.8 },
+  sleep:  { label: 'Sleep',       icon: '💤', period: TAU / 1.3 },
 };
 
 export function computePose(name, t, p) {

@@ -90,10 +90,10 @@ function addCandy(mat, color) {
 }
 
 export const MATERIALS = {
-  matte: { label: 'Матовый' },
-  glass: { label: 'Стекло' },
-  glow:  { label: 'Свечение' },
-  plush: { label: 'Плюш' },
+  matte: { label: 'Matte' },
+  glass: { label: 'Glossy' },
+  glow:  { label: 'Glow' },
+  plush: { label: 'Plush' },
 };
 const LEGACY = { vinyl: 'matte', glossy: 'glass', clay: 'matte' };
 export const normalizeMaterial = (k) => LEGACY[k] || (MATERIALS[k] ? k : 'matte');

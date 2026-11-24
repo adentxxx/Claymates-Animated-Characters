@@ -104,77 +104,77 @@ const MATERIAL_ICONS = {
 const OFF_ICON = '<circle cx="20" cy="20" r="11" fill="none" stroke-width="3"/><path d="M12.5 12.5l15 15" fill="none" stroke-width="3" stroke-linecap="round"/>';
 
 const TABS = [
-  { id: 'shape', label: 'Форма', controls: [
+  { id: 'shape', label: 'Shape', controls: [
     { key: 'shape', type: 'shapes' },
-    { key: 'width', type: 'slider', label: 'Ширина', min: 0.6, max: 1.6, step: 0.01, mesh: true },
-    { key: 'height', type: 'slider', label: 'Высота', min: 0.6, max: 1.6, step: 0.01, mesh: true },
-    { key: 'depth', type: 'slider', label: 'Объём (толщина)', min: 0.45, max: 1.5, step: 0.01, mesh: true },
-    { key: 'taper', type: 'slider', label: 'Сужение кверху', min: -0.8, max: 0.9, step: 0.01, mesh: true },
-    { key: 'wobble', type: 'slider', label: 'Ручная лепка', min: 0, max: 1.2, step: 0.01, mesh: true },
+    { key: 'width', type: 'slider', label: 'Width', min: 0.6, max: 1.6, step: 0.01, mesh: true },
+    { key: 'height', type: 'slider', label: 'Height', min: 0.6, max: 1.6, step: 0.01, mesh: true },
+    { key: 'depth', type: 'slider', label: 'Depth', min: 0.45, max: 1.5, step: 0.01, mesh: true },
+    { key: 'taper', type: 'slider', label: 'Taper', min: -0.8, max: 0.9, step: 0.01, mesh: true },
+    { key: 'wobble', type: 'slider', label: 'Hand-sculpted', min: 0, max: 1.2, step: 0.01, mesh: true },
   ] },
-  { id: 'emotion', label: 'Эмоция', controls: [
+  { id: 'emotion', label: 'Emotion', controls: [
     { key: 'emotion', type: 'iconGrid', options: Object.entries(EMOTIONS).map(([v, e]) => ({ v, label: e.label, icon: FACE_BASE + (FACES[v] || '') })) },
   ] },
-  { id: 'material', label: 'Материал', controls: [
+  { id: 'material', label: 'Material', controls: [
     { key: 'material', type: 'iconGrid', options: Object.entries(MATERIALS).map(([v, m]) => ({ v, label: m.label, icon: MATERIAL_ICONS[v] || '' })) },
-    { key: 'color', type: 'color', label: 'Цвет тела', palette: PALETTE },
-    { key: 'color2', type: 'color', label: 'Второй цвет градиента', palette: PALETTE, showIf: (s) => s.material === 'glow' },
-    { key: 'limbSame', type: 'toggle', label: 'Руки и ноги — цветом тела' },
-    { key: 'limbColor', type: 'color', label: 'Цвет рук и ног', palette: PALETTE, showIf: (s) => !s.limbSame },
+    { key: 'color', type: 'color', label: 'Body color', palette: PALETTE },
+    { key: 'color2', type: 'color', label: 'Second gradient color', palette: PALETTE, showIf: (s) => s.material === 'glow' },
+    { key: 'limbSame', type: 'toggle', label: 'Arms and legs match the body' },
+    { key: 'limbColor', type: 'color', label: 'Arm and leg color', palette: PALETTE, showIf: (s) => !s.limbSame },
   ] },
-  { id: 'face', label: 'Лицо', controls: [
-    { key: 'eyes', type: 'iconGrid', label: 'Глаза', options: [
-      { v: 'none', label: 'Нет', icon: OFF_ICON },
-      { v: 'dots', label: 'Точки', icon: '<ellipse cx="13.5" cy="20" rx="4.6" ry="5.6"/><ellipse cx="26.5" cy="20" rx="4.6" ry="5.6"/>' },
-      { v: 'googly', label: 'Глазастые', icon: '<circle cx="12.5" cy="20" r="8.5" fill="#fff" stroke-width="2.4"/><circle cx="27.5" cy="20" r="8.5" fill="#fff" stroke-width="2.4"/><circle cx="14.2" cy="21.2" r="4" stroke="none"/><circle cx="29.2" cy="21.2" r="4" stroke="none"/>' },
-      { v: 'ovals', label: 'Овалы', icon: '<ellipse cx="13.5" cy="20" rx="4.8" ry="8.5"/><ellipse cx="26.5" cy="20" rx="4.8" ry="8.5"/>' },
-      { v: 'lines', label: 'Палочки', icon: '<rect x="11" y="10" width="5.5" height="20" rx="2.75"/><rect x="23.5" y="10" width="5.5" height="20" rx="2.75"/>' },
-      { v: 'pixel', label: 'Пиксели', icon: '<rect x="8.5" y="9.5" width="9" height="21" rx="2.5"/><rect x="22.5" y="9.5" width="9" height="21" rx="2.5"/>' }] },
-    { key: 'eyeSize', type: 'slider', label: 'Размер глаз', min: 0.5, max: 1.8, step: 0.01 },
-    { key: 'eyeSpacing', type: 'slider', label: 'Расстояние между глазами', min: 0.12, max: 0.8, step: 0.01 },
-    { key: 'faceY', type: 'slider', label: 'Высота лица', min: 0.2, max: 0.85, step: 0.01 },
-    { key: 'mouth', type: 'toggle', label: 'Рот' },
-    { key: 'mouthSize', type: 'slider', label: 'Размер рта', min: 0.5, max: 2, step: 0.01, showIf: (s) => s.mouth },
-    { key: 'mouthGap', type: 'slider', label: 'Рот ниже / выше', min: 0, max: 1.2, step: 0.01, showIf: (s) => s.mouth },
-    { key: 'brows', type: 'iconGrid', label: 'Брови', options: [{ v: 'off', label: 'Нет', icon: OFF_ICON }, { v: 'auto', label: 'По эмоции', icon: OPT_ICONS.browAuto }, { v: 'on', label: 'Всегда', icon: OPT_ICONS.browOn }] },
-    { key: 'blush', type: 'toggle', label: 'Румянец' },
-    { key: 'shine', type: 'toggle', label: 'Блики в глазах' },
+  { id: 'face', label: 'Face', controls: [
+    { key: 'eyes', type: 'iconGrid', label: 'Eyes', options: [
+      { v: 'none', label: 'None', icon: OFF_ICON },
+      { v: 'dots', label: 'Dots', icon: '<ellipse cx="13.5" cy="20" rx="4.6" ry="5.6"/><ellipse cx="26.5" cy="20" rx="4.6" ry="5.6"/>' },
+      { v: 'googly', label: 'Googly', icon: '<circle cx="12.5" cy="20" r="8.5" fill="#fff" stroke-width="2.4"/><circle cx="27.5" cy="20" r="8.5" fill="#fff" stroke-width="2.4"/><circle cx="14.2" cy="21.2" r="4" stroke="none"/><circle cx="29.2" cy="21.2" r="4" stroke="none"/>' },
+      { v: 'ovals', label: 'Ovals', icon: '<ellipse cx="13.5" cy="20" rx="4.8" ry="8.5"/><ellipse cx="26.5" cy="20" rx="4.8" ry="8.5"/>' },
+      { v: 'lines', label: 'Lines', icon: '<rect x="11" y="10" width="5.5" height="20" rx="2.75"/><rect x="23.5" y="10" width="5.5" height="20" rx="2.75"/>' },
+      { v: 'pixel', label: 'Pixels', icon: '<rect x="8.5" y="9.5" width="9" height="21" rx="2.5"/><rect x="22.5" y="9.5" width="9" height="21" rx="2.5"/>' }] },
+    { key: 'eyeSize', type: 'slider', label: 'Eye size', min: 0.5, max: 1.8, step: 0.01 },
+    { key: 'eyeSpacing', type: 'slider', label: 'Eye spacing', min: 0.12, max: 0.8, step: 0.01 },
+    { key: 'faceY', type: 'slider', label: 'Face height', min: 0.2, max: 0.85, step: 0.01 },
+    { key: 'mouth', type: 'toggle', label: 'Mouth' },
+    { key: 'mouthSize', type: 'slider', label: 'Mouth size', min: 0.5, max: 2, step: 0.01, showIf: (s) => s.mouth },
+    { key: 'mouthGap', type: 'slider', label: 'Mouth position', min: 0, max: 1.2, step: 0.01, showIf: (s) => s.mouth },
+    { key: 'brows', type: 'iconGrid', label: 'Brows', options: [{ v: 'off', label: 'None', icon: OFF_ICON }, { v: 'auto', label: 'By emotion', icon: OPT_ICONS.browAuto }, { v: 'on', label: 'Always', icon: OPT_ICONS.browOn }] },
+    { key: 'blush', type: 'toggle', label: 'Blush' },
+    { key: 'shine', type: 'toggle', label: 'Eye shine' },
   ] },
-  { id: 'body', label: 'Руки/ноги', controls: [
-    { key: 'arms', type: 'iconGrid', label: 'Руки', options: [{ v: 'none', label: 'Нет', icon: OFF_ICON }, { v: 'stubby', label: 'Пухляши', icon: OPT_ICONS.armsStubby }, { v: 'noodle', label: 'Лапшички', icon: OPT_ICONS.armsNoodle }] },
-    { key: 'armLength', type: 'slider', label: 'Длина рук', min: 0.5, max: 2, step: 0.01, showIf: (s) => s.arms !== 'none' },
-    { key: 'armY', type: 'slider', label: 'Высота плеч', min: 0.15, max: 0.75, step: 0.01, showIf: (s) => s.arms !== 'none' },
-    { key: 'legs', type: 'iconGrid', label: 'Ноги', options: [{ v: 'none', label: 'Нет', icon: OFF_ICON }, { v: 'stubby', label: 'Пухлые', icon: OPT_ICONS.legsStubby }, { v: 'thin', label: 'Тонкие', icon: OPT_ICONS.legsThin }] },
-    { key: 'legLength', type: 'slider', label: 'Длина ног', min: 0.3, max: 2.2, step: 0.01, showIf: (s) => s.legs !== 'none' },
-    { key: 'limbThick', type: 'slider', label: 'Толщина конечностей', min: 0.6, max: 1.6, step: 0.01, showIf: (s) => s.legs !== 'none' || s.arms !== 'none' },
+  { id: 'body', label: 'Limbs', controls: [
+    { key: 'arms', type: 'iconGrid', label: 'Arms', options: [{ v: 'none', label: 'None', icon: OFF_ICON }, { v: 'stubby', label: 'Chubby', icon: OPT_ICONS.armsStubby }, { v: 'noodle', label: 'Noodles', icon: OPT_ICONS.armsNoodle }] },
+    { key: 'armLength', type: 'slider', label: 'Arm length', min: 0.5, max: 2, step: 0.01, showIf: (s) => s.arms !== 'none' },
+    { key: 'armY', type: 'slider', label: 'Shoulder height', min: 0.15, max: 0.75, step: 0.01, showIf: (s) => s.arms !== 'none' },
+    { key: 'legs', type: 'iconGrid', label: 'Legs', options: [{ v: 'none', label: 'None', icon: OFF_ICON }, { v: 'stubby', label: 'Chubby', icon: OPT_ICONS.legsStubby }, { v: 'thin', label: 'Thin', icon: OPT_ICONS.legsThin }] },
+    { key: 'legLength', type: 'slider', label: 'Leg length', min: 0.3, max: 2.2, step: 0.01, showIf: (s) => s.legs !== 'none' },
+    { key: 'limbThick', type: 'slider', label: 'Limb thickness', min: 0.6, max: 1.6, step: 0.01, showIf: (s) => s.legs !== 'none' || s.arms !== 'none' },
   ] },
-  { id: 'acc', label: 'Аксессуары', controls: [
-    { key: 'head', type: 'iconGrid', label: 'На голове', options: [
-      { v: 'none', label: 'Ничего', icon: OFF_ICON }, { v: 'beret', label: 'Берет', icon: OPT_ICONS.beret }, { v: 'cap', label: 'Кепка', icon: OPT_ICONS.cap },
-      { v: 'party', label: 'Колпак', icon: OPT_ICONS.party }, { v: 'crown', label: 'Корона', icon: OPT_ICONS.crown }, { v: 'halo', label: 'Нимб', icon: OPT_ICONS.halo },
-      { v: 'bow', label: 'Бантик', icon: OPT_ICONS.bow }, { v: 'sprout', label: 'Росток', icon: OPT_ICONS.sprout }, { v: 'antenna', label: 'Антенна', icon: OPT_ICONS.antenna },
-      { v: 'bunny', label: 'Ушки-зайки', icon: OPT_ICONS.bunny }, { v: 'cat', label: 'Ушки-кошки', icon: OPT_ICONS.cat }] },
-    { key: 'eyewear', type: 'iconGrid', label: 'Очки', options: [{ v: 'none', label: 'Нет', icon: OFF_ICON }, { v: 'round', label: 'Круглые', icon: OPT_ICONS.round }, { v: 'geek', label: 'Ботаник', icon: OPT_ICONS.geek }, { v: 'sun', label: 'Солнечные', icon: OPT_ICONS.sun }] },
-    { key: 'neck', type: 'iconGrid', label: 'На шее', options: [{ v: 'none', label: 'Ничего', icon: OFF_ICON }, { v: 'tie', label: 'Галстук', icon: OPT_ICONS.tie }, { v: 'bowtie', label: 'Бабочка', icon: OPT_ICONS.bowtie }, { v: 'scarf', label: 'Шарф', icon: OPT_ICONS.scarf }] },
-    { key: 'accColor', type: 'color', label: 'Цвет шапки / галстука', palette: PALETTE },
-    { key: 'glassColor', type: 'color', label: 'Цвет оправы', palette: PALETTE, showIf: (s) => s.eyewear !== 'none' },
-    { key: 'accSize', type: 'slider', label: 'Размер аксессуаров', min: 0.5, max: 1.8, step: 0.01 },
+  { id: 'acc', label: 'Accessories', controls: [
+    { key: 'head', type: 'iconGrid', label: 'Headwear', options: [
+      { v: 'none', label: 'None', icon: OFF_ICON }, { v: 'beret', label: 'Beret', icon: OPT_ICONS.beret }, { v: 'cap', label: 'Cap', icon: OPT_ICONS.cap },
+      { v: 'party', label: 'Party hat', icon: OPT_ICONS.party }, { v: 'crown', label: 'Crown', icon: OPT_ICONS.crown }, { v: 'halo', label: 'Halo', icon: OPT_ICONS.halo },
+      { v: 'bow', label: 'Bow', icon: OPT_ICONS.bow }, { v: 'sprout', label: 'Sprout', icon: OPT_ICONS.sprout }, { v: 'antenna', label: 'Antenna', icon: OPT_ICONS.antenna },
+      { v: 'bunny', label: 'Bunny ears', icon: OPT_ICONS.bunny }, { v: 'cat', label: 'Cat ears', icon: OPT_ICONS.cat }] },
+    { key: 'eyewear', type: 'iconGrid', label: 'Glasses', options: [{ v: 'none', label: 'None', icon: OFF_ICON }, { v: 'round', label: 'Round', icon: OPT_ICONS.round }, { v: 'geek', label: 'Geek', icon: OPT_ICONS.geek }, { v: 'sun', label: 'Sunglasses', icon: OPT_ICONS.sun }] },
+    { key: 'neck', type: 'iconGrid', label: 'Neckwear', options: [{ v: 'none', label: 'None', icon: OFF_ICON }, { v: 'tie', label: 'Tie', icon: OPT_ICONS.tie }, { v: 'bowtie', label: 'Bow tie', icon: OPT_ICONS.bowtie }, { v: 'scarf', label: 'Scarf', icon: OPT_ICONS.scarf }] },
+    { key: 'accColor', type: 'color', label: 'Hat / tie color', palette: PALETTE },
+    { key: 'glassColor', type: 'color', label: 'Frame color', palette: PALETTE, showIf: (s) => s.eyewear !== 'none' },
+    { key: 'accSize', type: 'slider', label: 'Accessory size', min: 0.5, max: 1.8, step: 0.01 },
   ] },
 ];
 
 const ANIM_TABS = [
-  { id: 'motion', label: 'Анимация', controls: [
+  { id: 'motion', label: 'Animation', controls: [
     { key: 'anim', type: 'iconGrid', options: Object.entries(ANIMS).map(([v, a]) => ({ v, label: a.label, icon: ANIM_ICONS[v] || '' })) },
-    { key: 'speed', type: 'slider', label: 'Скорость анимации', min: 0.2, max: 2.5, step: 0.05, format: (v) => v.toFixed(2).replace(/0$/, '').replace('.', ',') + '×' },
-    { key: 'follow', type: 'toggle', label: 'Следить за курсором' },
-    { key: 'blink', type: 'toggle', label: 'Моргать' },
+    { key: 'speed', type: 'slider', label: 'Animation speed', min: 0.2, max: 2.5, step: 0.05, format: (v) => v.toFixed(2).replace(/0$/, '') + '×' },
+    { key: 'follow', type: 'toggle', label: 'Follow the cursor' },
+    { key: 'blink', type: 'toggle', label: 'Blink' },
   ] },
 ];
 
 // Two stages of building a character: first how it looks, then how it moves.
 export const STAGES = [
-  { id: 'design', title: 'Дизайн', sub: 'Форма, эмоция, материал и детали', tabs: TABS },
-  { id: 'anim', title: 'Анимация', sub: 'Как персонаж двигается', tabs: ANIM_TABS },
+  { id: 'design', title: 'Design', sub: 'Shape, emotion, material and details', tabs: TABS },
+  { id: 'anim', title: 'Animation', sub: 'How the character moves', tabs: ANIM_TABS },
 ];
 
 const DICE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><circle cx="8.5" cy="8.5" r=".9" fill="currentColor"/><circle cx="15.5" cy="15.5" r=".9" fill="currentColor"/><circle cx="15.5" cy="8.5" r=".9" fill="currentColor"/><circle cx="8.5" cy="15.5" r=".9" fill="currentColor"/><circle cx="12" cy="12" r=".9" fill="currentColor"/></svg>';
@@ -240,7 +240,7 @@ export function createUI({ state, onChange, onPreset, onRandom }) {
     tabsEl.hidden = stage.tabs.length < 2;
     const tab = stage.tabs.some((t) => t.id === lastTab[stage.id]) ? lastTab[stage.id] : stage.tabs[0].id;
     radio = stage.tabs.length < 2 ? null : createJellyRadio(tabsRow, stage.tabs.map((t) => ({ value: t.id, label: t.label })), {
-      value: tab, ariaLabel: 'Разделы настроек', onChange: (v) => select(v),
+      value: tab, ariaLabel: 'Settings sections', onChange: (v) => select(v),
     });
     tabsEl.scrollLeft = 0;
     select(tab, true);
@@ -346,8 +346,8 @@ export function createUI({ state, onChange, onPreset, onRandom }) {
   /* ---- presets ---- */
   const presetsEl = document.getElementById('presets');
   // first item: a brand-new random character on every click
-  const rnd = h('button', 'preset preset-random', `<i aria-hidden="true">${DICE}</i><span>Случайный</span>`);
-  rnd.title = 'Новый случайный персонаж';
+  const rnd = h('button', 'preset preset-random', `<i aria-hidden="true">${DICE}</i><span>Random</span>`);
+  rnd.title = 'New random character';
   rnd.onclick = () => { onRandom(); rnd.classList.remove('spin'); void rnd.offsetWidth; rnd.classList.add('spin'); };
   presetsEl.appendChild(rnd);
   // fade the edge on each side that still has presets hidden behind it

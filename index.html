@@ -1,41 +1,41 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#eef0f6" />
-  <title>ClayMates — конструктор 3D-персонажей с анимацией</title>
-  <meta name="description" content="Собери милого объёмного 3D-персонажа: форма, материал, эмоции, аксессуары и готовые анимации. Скачай PNG с прозрачным фоном или зацикленное видео WebM и MP4 — бесплатно, прямо в браузере." />
+  <title>ClayMates — 3D Character Maker with Animations</title>
+  <meta name="description" content="Create a cute 3D character: shape, material, emotions, accessories and ready-made animations. Download a transparent PNG or a looping WebM / MP4 video. Free, right in your browser." />
   <meta name="robots" content="index, follow, max-image-preview:large" />
   <meta name="author" content="hereisalex" />
   <link rel="canonical" href="https://adentxxx.github.io/Claymates-Animated-Characters/" />
   <!-- link previews (Telegram, VK, X, Slack, WhatsApp…) -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="ClayMates" />
-  <meta property="og:locale" content="ru_RU" />
+  <meta property="og:locale" content="en_US" />
   <meta property="og:url" content="https://adentxxx.github.io/Claymates-Animated-Characters/" />
-  <meta property="og:title" content="ClayMates — конструктор 3D-персонажей с анимацией" />
-  <meta property="og:description" content="Форма, материал, эмоции, аксессуары и готовые анимации. PNG с прозрачным фоном и зацикленное видео — бесплатно, в браузере." />
+  <meta property="og:title" content="ClayMates — 3D Character Maker with Animations" />
+  <meta property="og:description" content="Shape, material, emotions, accessories and ready-made animations. Transparent PNG and looping video, free in your browser." />
   <meta property="og:image" content="https://adentxxx.github.io/Claymates-Animated-Characters/og-cover.jpg?v=3" />
   <meta property="og:image:type" content="image/jpeg" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="ClayMates — пушистый жёлтый 3D-кубик с ростком и надпись ClayMates на тёмном фоне" />
+  <meta property="og:image:alt" content="ClayMates: a fluffy yellow 3D cube character with a sprout next to the ClayMates logo on a dark background" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="ClayMates — конструктор 3D-персонажей с анимацией" />
-  <meta name="twitter:description" content="Форма, материал, эмоции, аксессуары и готовые анимации. PNG с прозрачным фоном и зацикленное видео — бесплатно, в браузере." />
+  <meta name="twitter:title" content="ClayMates — 3D Character Maker with Animations" />
+  <meta name="twitter:description" content="Shape, material, emotions, accessories and ready-made animations. Transparent PNG and looping video, free in your browser." />
   <meta name="twitter:image" content="https://adentxxx.github.io/Claymates-Animated-Characters/og-cover.jpg?v=3" />
-  <meta name="twitter:image:alt" content="ClayMates — пушистый жёлтый 3D-кубик с ростком и надпись ClayMates на тёмном фоне" />
+  <meta name="twitter:image:alt" content="ClayMates: a fluffy yellow 3D cube character with a sprout next to the ClayMates logo on a dark background" />
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "WebApplication",
     "name": "ClayMates",
-    "alternateName": "Конструктор 3D-персонажей ClayMates",
+    "alternateName": "ClayMates 3D Character Maker",
     "url": "https://adentxxx.github.io/Claymates-Animated-Characters/",
-    "description": "Собери милого объёмного 3D-персонажа: форма, материал, эмоции, аксессуары и готовые анимации. Скачай PNG с прозрачным фоном или зацикленное видео WebM и MP4 — бесплатно, прямо в браузере.",
+    "description": "Create a cute 3D character: shape, material, emotions, accessories and ready-made animations. Download a transparent PNG or a looping WebM / MP4 video. Free, right in your browser.",
     "image": "https://adentxxx.github.io/Claymates-Animated-Characters/og-cover.jpg?v=3",
-    "inLanguage": "ru",
+    "inLanguage": "en",
     "applicationCategory": "DesignApplication",
     "operatingSystem": "Any (web browser)",
     "browserRequirements": "Requires WebGL",
@@ -63,9 +63,9 @@
 <body class="intro">
   <div id="app">
     <main id="stage">
-      <h1 class="sr-only">ClayMates — конструктор 3D-персонажей с анимацией</h1>
-      <p class="sr-only">Соберите объёмного персонажа: выберите форму тела, материал (матовый, глянцевый, свечение, плюш), эмоцию, глаза, руки и ноги, шапку, очки и другие аксессуары, затем готовую анимацию. Скачайте PNG 2048×2048 с прозрачным фоном или зацикленное видео WebM и MP4.</p>
-      <canvas id="c" role="img" aria-label="3D-персонаж, которого вы настраиваете"></canvas>
+      <h1 class="sr-only">ClayMates — 3D Character Maker with Animations</h1>
+      <p class="sr-only">Build a 3D character: pick a body shape, a material (matte, glossy, glow, plush), an emotion, eyes, arms and legs, hats, glasses and other accessories, then a ready-made animation. Download a 2048×2048 PNG with a transparent background or a looping WebM / MP4 video.</p>
+      <canvas id="c" role="img" aria-label="The 3D character you are customizing"></canvas>
 
       <div class="presets-wrap"><div class="presets" id="presets"></div></div>
 

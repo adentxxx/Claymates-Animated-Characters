@@ -16,9 +16,9 @@ const svg = (p, sw = 1.9) => `<svg viewBox="0 0 24 24" fill="none" stroke="curre
 export function createActionMenu(root, items, { trigger, onRun, up = true }) {
   root.classList.add('xp');
   root.innerHTML = `
-    <div class="xp-menu${up ? ' up' : ''}" role="menu" aria-label="Скачать"><div class="xp-inner">
+    <div class="xp-menu${up ? ' up' : ''}" role="menu" aria-label="Download"><div class="xp-inner">
       <i class="xp-hl"></i>
-      ${items.map((it, i) => `<div class="xp-opt${it.soon ? ' xp-off' : ''}" role="menuitem" id="xp-o${i}"${it.soon ? ' aria-disabled="true"' : ''}>${svg(it.icon)}<b>${it.label}</b>${it.soon ? '<em>скоро</em>' : ''}</div>`).join('')}
+      ${items.map((it, i) => `<div class="xp-opt${it.soon ? ' xp-off' : ''}" role="menuitem" id="xp-o${i}"${it.soon ? ' aria-disabled="true"' : ''}>${svg(it.icon)}<b>${it.label}</b>${it.soon ? '<em>soon</em>' : ''}</div>`).join('')}
     </div></div>`;
   const q = (s) => root.querySelector(s);
   const menu = q('.xp-menu'), hl = q('.xp-hl');

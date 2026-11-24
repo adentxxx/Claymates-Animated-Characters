@@ -1,9 +1,9 @@
 // "Экспортировать код" — modal with an <iframe> snippet that embeds the current character on
 // another site (embed mode: character only, transparent background, plays its animation).
 const SIZES = [
-  { id: 's', label: 'Маленький', px: 240 },
-  { id: 'm', label: 'Средний', px: 360 },
-  { id: 'l', label: 'Большой', px: 520 },
+  { id: 's', label: 'Small', px: 240 },
+  { id: 'm', label: 'Medium', px: 360 },
+  { id: 'l', label: 'Large', px: 520 },
 ];
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -18,24 +18,24 @@ export function createEmbedModal({ getUrl, getTitle, toast }) {
   root.innerHTML = `
     <div class="em-dialog" role="dialog" aria-modal="true" aria-labelledby="em-title">
       <header class="em-head">
-        <h2 id="em-title">Код для встраивания</h2>
-        <button class="em-close" type="button" aria-label="Закрыть">
+        <h2 id="em-title">Embed code</h2>
+        <button class="em-close" type="button" aria-label="Close">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
         </button>
       </header>
-      <p class="em-lead">Вставьте этот код на свой сайт — персонаж появится там с прозрачным фоном и будет проигрывать свою анимацию.</p>
-      <div class="em-sizes" role="radiogroup" aria-label="Размер">
+      <p class="em-lead">Paste this code into your website: the character appears there on a transparent background and plays its animation.</p>
+      <div class="em-sizes" role="radiogroup" aria-label="Size">
         ${SIZES.map((s) => `<button type="button" class="em-size" role="radio" data-id="${s.id}">${s.label}<small>${s.px}×${s.px}</small></button>`).join('')}
       </div>
-      <textarea class="em-code" readonly spellcheck="false" aria-label="Код для встраивания"></textarea>
+      <textarea class="em-code" readonly spellcheck="false" aria-label="Embed code"></textarea>
       <button class="em-copy" type="button">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>
-        <span>Скопировать код</span>
+        <span>Copy code</span>
       </button>
       <ol class="em-steps">
-        <li>Скопируйте код.</li>
-        <li>Вставьте его в HTML страницы там, где должен стоять персонаж: в Tilda — блок «HTML-код», в Webflow — элемент Embed, в WordPress — блок «Пользовательский HTML».</li>
-        <li>Чтобы изменить размер, поменяйте <code>width</code> и <code>height</code> в коде.</li>
+        <li>Copy the code.</li>
+        <li>Paste it into the page HTML where the character should appear: in Webflow use an Embed element, in WordPress a “Custom HTML” block, in Tilda an “HTML code” block.</li>
+        <li>To change the size, edit <code>width</code> and <code>height</code> in the code.</li>
       </ol>
       <p class="em-warn" hidden></p>
     </div>`;
@@ -54,7 +54,7 @@ export function createEmbedModal({ getUrl, getTitle, toast }) {
     const local = /^(localhost|127\.|\[::1\])/.test(location.hostname);
     warn.hidden = !local;
     warn.textContent = local
-      ? 'Сайт сейчас открыт локально, поэтому этот код будет работать только на вашем компьютере. Чтобы встраивать персонажа на другие сайты, опубликуйте Claymates в интернете (например, на Vercel) и возьмите код оттуда.'
+      ? 'The site is running locally, so this code only works on your computer. To embed the character on other websites, publish ClayMates online and copy the code from there.'
       : '';
   }
 
@@ -62,10 +62,10 @@ export function createEmbedModal({ getUrl, getTitle, toast }) {
     try { await navigator.clipboard.writeText(code.value); }
     catch { code.select(); document.execCommand && document.execCommand('copy'); }
     copyBtn.classList.add('done');
-    copyBtn.querySelector('span').textContent = 'Скопировано';
-    toast && toast('Код скопирован');
+    copyBtn.querySelector('span').textContent = 'Copied';
+    toast && toast('Code copied');
     clearTimeout(copy.t);
-    copy.t = setTimeout(() => { copyBtn.classList.remove('done'); copyBtn.querySelector('span').textContent = 'Скопировать код'; }, 1800);
+    copy.t = setTimeout(() => { copyBtn.classList.remove('done'); copyBtn.querySelector('span').textContent = 'Copy code'; }, 1800);
   }
 
   function open() {

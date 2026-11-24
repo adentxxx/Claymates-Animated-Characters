@@ -24,7 +24,7 @@ const HEART = '<svg viewBox="0 0 24 24" fill="#ff4d6d" aria-hidden="true"><path 
 
 export function createAbout(root) {
   root.innerHTML = `
-    <button class="about-btn" type="button" aria-label="О проекте" aria-expanded="false" aria-controls="about-tip">
+    <button class="about-btn" type="button" aria-label="About" aria-expanded="false" aria-controls="about-tip">
       <svg viewBox="0 0 28 28" aria-hidden="true">
         <path class="about-badge" d="${scallop(14, 14, 11, 2.2, 7)}"/>
         <circle cx="14" cy="9.4" r="1.6" fill="#fff"/>
@@ -33,8 +33,8 @@ export function createAbout(root) {
     </button>
     <i class="about-tail"></i>
     <div class="about-tip" id="about-tip">
-      <a class="about-gh" href="${GITHUB}" target="_blank" rel="noopener">${GH_ICON}<span>Проект на GitHub</span>${ARROW}</a>
-      <p class="about-by">Сделано с ${HEART} — <a href="${DEV}" target="_blank" rel="noopener">hereisalex</a></p>
+      <a class="about-gh" href="${GITHUB}" target="_blank" rel="noopener">${GH_ICON}<span>Project on GitHub</span>${ARROW}</a>
+      <p class="about-by">Made with ${HEART} by <a href="${DEV}" target="_blank" rel="noopener">hereisalex</a></p>
     </div>`;
   const btn = root.querySelector('.about-btn'), tip = root.querySelector('.about-tip'), tail = root.querySelector('.about-tail');
   const A = S(0, SHOW);
