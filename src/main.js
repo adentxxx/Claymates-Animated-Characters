@@ -6,6 +6,7 @@ import { createUI, STAGES } from './ui.js';
 import { createStageBar } from './stagebar.js';
 import { createActionMenu } from './exportmenu.js';
 import { createEmbedModal } from './embedmodal.js';
+import { createHalo } from './halo.js';
 import { createAbout } from './about.js';
 import { DEFAULTS, PRESETS, PALETTE, presetState } from './presets.js';
 import { SHAPES } from './sdf.js';
@@ -68,6 +69,14 @@ scene.add(rim);
 
 const hero = new Character();
 scene.add(hero.root, hero.fx);
+
+// soft screen-space halo for the glow material (same on screen, in PNG and in video)
+const halo = createHalo(renderer);
+scene.add(halo.mesh);
+function draw() {
+  halo.prepare(scene, camera, { on: state.material === 'glow', c1: state.color, c2: state.color2, hide: [hero.fx] });
+  renderer.render(scene, camera);
+}
 
 /* ---------------- rebuild pipeline ---------------- */
 const MESH_KEYS = new Set(['shape', 'width', 'height', 'depth', 'taper', 'wobble', 'seed']);
@@ -210,7 +219,8 @@ function randomize() {
 
 /* exports: download icon in the stage tab bar + spring menu */
 const ICON = {
-  png: '<path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5"/><path d="M5 19h14"/>',
+  // photo: frame with a sun and hills
+  png: '<rect x="3" y="4.5" width="18" height="15" rx="3"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="m3.5 17 5-5 3.5 3.5 2.5-2.5 6 5.5"/>',
   video: '<rect x="3" y="6" width="13" height="12" rx="3"/><path d="m16 10 5-3v10l-5-3"/>',
   embed: '<path d="m8.5 8-4.5 4 4.5 4M15.5 8l4.5 4-4.5 4M13.5 5.5l-3 13"/>',
   link: '<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/>',
@@ -218,10 +228,11 @@ const ICON = {
 // the download icon in the stage tab bar opens this menu
 const exportMenu = createActionMenu(document.getElementById('export-menu'), [
   { id: 'png', label: 'Скачать PNG', icon: ICON.png },
-  { id: 'video', label: 'Скачать видео', icon: ICON.video },
+  { id: 'webm', label: 'Скачать видео WebM', icon: ICON.video },
+  { id: 'mp4', label: 'Скачать видео MP4', icon: ICON.video },
   { id: 'link', label: 'Скопировать ссылку', icon: ICON.link },
   { id: 'embed', label: 'Экспортировать код', icon: ICON.embed, soon: true }, // enabled once the site is published
-], { trigger: stageBar.actionEl, up: true, onRun: (id) => ({ png: exportPNG, video: exportVideo, link: copyLink, embed: () => embedModal.open() })[id]() });
+], { trigger: stageBar.actionEl, up: true, onRun: (id) => ({ png: exportPNG, webm: () => exportVideo('webm'), mp4: () => exportVideo('mp4'), link: copyLink, embed: () => embedModal.open() })[id]() });
 createAbout(document.getElementById('about'));
 
 const embedModal = createEmbedModal({
@@ -238,7 +249,7 @@ function setExporting(on) {
 function exportPNG() {
   scene.background = null;
   setExporting(true); // centred character in the file
-  renderer.render(scene, camera);
+  draw();
   setExporting(false);
   scene.background = SITE_BG;
   canvas.toBlob((blob) => download(blob, 'claymate.png'), 'image/png');
@@ -256,11 +267,20 @@ let recording = false;
 // periods, so its last frame runs straight into its first.
 let paused = false;
 const LOOP_FPS = 30, MIN_CLIP = 2.5;
-async function exportVideo() {
-  if (recording || !window.MediaRecorder) return;
-  // WebM VP9/VP8 keep the alpha channel; MP4 cannot, so it is not offered
-  const type = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find((t) => MediaRecorder.isTypeSupported(t));
-  if (!type) { toast('Браузер не умеет записывать WebM'); return; }
+// WebM (VP9/VP8) keeps the alpha channel: transparent background.
+// MP4 (H.264) has no alpha, so it is recorded on the site's background — plays everywhere.
+const VIDEO_TYPES = {
+  webm: ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'],
+  mp4: ['video/mp4;codecs=avc1.640028', 'video/mp4;codecs=avc1.42E01E', 'video/mp4;codecs=avc1', 'video/mp4'],
+};
+async function exportVideo(format = 'webm') {
+  if (recording) return;
+  const type = window.MediaRecorder && VIDEO_TYPES[format].find((t) => MediaRecorder.isTypeSupported(t));
+  if (!type) {
+    toast(format === 'mp4' ? 'Этот браузер не записывает MP4 — откройте сайт в Chrome, Edge или Safari' : 'Этот браузер не записывает WebM — откройте сайт в Chrome, Edge или Firefox');
+    return;
+  }
+  const transparent = format === 'webm';
   recording = true;
   exportMenu.setBusy(true);
 
@@ -290,14 +310,14 @@ async function exportVideo() {
   const octx = out.getContext('2d');
   const sx = (canvas.width - size) / 2, sy = (canvas.height - size) / 2;
   const renderFrame = () => {
-    scene.background = null;
+    scene.background = transparent ? null : SITE_BG;
     camera.clearViewOffset();
-    renderer.render(scene, camera);
+    draw();
     octx.clearRect(0, 0, size, size);
     octx.drawImage(canvas, sx, sy, size, size, 0, 0, size, size);
     scene.background = SITE_BG;
     applyViewShift();
-    renderer.render(scene, camera);
+    draw();
   };
   const stream = out.captureStream(0);
   const track = stream.getVideoTracks()[0];
@@ -329,8 +349,8 @@ async function exportVideo() {
     recording = false;
     exportMenu.setBusy(false);
   }
-  download(new Blob(chunks, { type }), `claymate-${state.anim}-loop.webm`);
-  toast(`Цикл ${real.toFixed(1).replace('.', ',')} с готов, фон прозрачный`);
+  download(new Blob(chunks, { type: type.split(';')[0] }), `claymate-${state.anim}-loop.${format}`);
+  toast(`Цикл ${real.toFixed(1).replace('.', ',')} с готов${transparent ? ', фон прозрачный' : ''}`);
 }
 async function copyLink() {
   history.replaceState(null, '', '#' + encodeState());
@@ -381,7 +401,7 @@ function resize() {
   camera.updateProjectionMatrix();
   // resizing clears the canvas; draw again right away so it never shows an empty frame
   // (on phones the stage shrinks every frame while the settings sheet rises)
-  if (!paused && hero.box) renderer.render(scene, camera);
+  if (!paused && hero.box) draw();
 }
 new ResizeObserver(resize).observe(stage);
 
@@ -444,9 +464,9 @@ function frame() {
   }
   hero.update(dt, state, pointer);
   controls.update();
-  renderer.render(scene, camera);
+  draw();
   requestAnimationFrame(frame);
 }
 frame();
 
-window.__claymates = { state, hero, renderer, scene, camera, exportVideo };
+window.__claymates = { state, hero, renderer, scene, camera, exportVideo, draw };

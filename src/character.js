@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { makeSDF, Surface } from './sdf.js';
 import { buildBodyGeometry } from './mesher.js';
-import { createBodyMaterial, createFurShells, createFaceMaterials, createGlowShell, normalizeMaterial } from './materials.js';
+import { createBodyMaterial, createFurShells, createFaceMaterials, normalizeMaterial } from './materials.js';
 import { EMOTIONS, ANIMS, POSE_KEYS, newPose, computePose } from './animations.js';
 
 const V3 = THREE.Vector3;
@@ -81,8 +81,6 @@ export class Character {
     this.local.add(this.bodyMesh);
     this.furGroup = new THREE.Group(); this.local.add(this.furGroup);
     this.halo = null;
-    this.glowShell = new THREE.Mesh(new THREE.BufferGeometry()); this.glowShell.visible = false; this.glowShell.renderOrder = 2;
-    this.local.add(this.glowShell);
     this.parts = new THREE.Group(); this.local.add(this.parts);
     this.fx = new THREE.Group();
     this.fm = createFaceMaterials();
@@ -117,7 +115,6 @@ export class Character {
     this.bodyMesh.geometry.dispose();
     this.bodyMesh.geometry = geo;
     for (const m of this.furGroup.children) m.geometry = geo;
-    this.glowShell.geometry = geo;
     this.syncBounds(geo);
     this.sdf = sdf;
     this.box = geo.boundingBox.clone();
@@ -128,7 +125,7 @@ export class Character {
   syncBounds(geo) {
     const bb = geo.boundingBox;
     const c = bb.getCenter(new V3());
-    for (const mat of [this.bodyMat, this.glowShell.material, this.limbMat, this.partMat]) {
+    for (const mat of [this.bodyMat, this.limbMat, this.partMat]) {
       const u = mat && (mat.userData.uniforms || mat.uniforms);
       if (u && u.uYmin) { u.uYmin.value = bb.min.y; u.uYmax.value = bb.max.y; }
     }
@@ -139,7 +136,6 @@ export class Character {
     this.kind = kind;
     for (const m of [this.bodyMat, this.limbMat, this.partMat]) m && m.dispose();
     for (const s of this.furGroup.children) s.material.dispose();
-    if (this.glowShell.material && this.glowShell.material.dispose) this.glowShell.material.dispose();
     this.bodyMat = createBodyMaterial(kind, st.color, true, st.color2);
     this.partMat = createBodyMaterial(kind, st.color, false, st.color2);
     this.limbMat = createBodyMaterial(kind, st.limbSame ? st.color : st.limbColor, false, st.color2);
@@ -149,10 +145,6 @@ export class Character {
 
     this.furGroup.clear();
     if (kind === 'plush') for (const m of createFurShells(st.color)) this.furGroup.add(new THREE.Mesh(geo, m));
-
-    // glow: soft halo around the silhouette
-    this.glowShell.visible = kind === 'glow';
-    this.glowShell.material = kind === 'glow' ? createGlowShell(st.color, st.color2) : new THREE.MeshBasicMaterial();
 
     // face ink: tinted strokes for the glow look, near-black otherwise
     const ink = kind === 'glow' ? new THREE.Color(st.color).lerp(new THREE.Color(st.color2), 0.3).multiplyScalar(0.55) : new THREE.Color(0x15151c);

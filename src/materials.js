@@ -129,32 +129,6 @@ function glowMaterial(c1, c2, vertexColors) {
   return m;
 }
 
-/* Soft halo around the silhouette (back-face shell pushed along normals). */
-export function createGlowShell(c1, c2, width = 0.09) {
-  return new THREE.ShaderMaterial({
-    uniforms: { uC1: { value: new THREE.Color(c1) }, uC2: { value: new THREE.Color(c2) }, uW: { value: width }, uYmin: { value: 0 }, uYmax: { value: 2 } },
-    vertexShader: `
-      uniform float uW; varying vec3 vN; varying vec3 vV; varying float vY;
-      void main(){
-        vec3 p = position + normal * uW;
-        vec4 mv = modelViewMatrix * vec4(p, 1.0);
-        vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz); vY = position.y;
-        gl_Position = projectionMatrix * mv;
-      }`,
-    fragmentShader: `
-      uniform vec3 uC1; uniform vec3 uC2; uniform float uYmin; uniform float uYmax;
-      varying vec3 vN; varying vec3 vV; varying float vY;
-      void main(){
-        float d = abs(dot(normalize(vN), normalize(vV)));
-        float gy = clamp((vY - uYmin) / max(uYmax - uYmin, 0.001), 0.0, 1.0);
-        vec3 col = mix(mix(uC1, uC2, gy), vec3(1.0), 0.35);
-        gl_FragColor = vec4(col, pow(d, 1.8) * 0.75);
-        #include <colorspace_fragment>
-      }`,
-    side: THREE.BackSide, transparent: true, depthWrite: false,
-  });
-}
-
 export function createBodyMaterial(kind, color, vertexColors = true, color2 = '#ff7ad9') {
   kind = normalizeMaterial(kind);
   const c = new THREE.Color(color);
