@@ -12,12 +12,14 @@ import { SHAPES } from './sdf.js';
 import { EMOTIONS } from './animations.js';
 import { track } from './analytics.js';
 import { weightWave } from './weightwave.js';
+import { magnetic } from './magnetic.js';
 import './notfound.css';
 
 const home = document.getElementById('home');
 home.href = import.meta.env.BASE_URL;
 track('page_404', { path: location.pathname });
 home.addEventListener('click', () => track('404_home_click'));
+magnetic(home, home.querySelector('.mag-lbl'));   // round button that leans toward the cursor
 let pushed = false;
 
 /* ---------- quality tier from what the device reports ---------- */
@@ -70,7 +72,8 @@ function layout() {
   // the digits sit inside their line box: trim the empty space above and below them
   const code = document.getElementById('code').getBoundingClientRect();
   toWorld(code, obstacles[0], code.height * 0.12, code.width * 0.02);
-  toWorld(home.getBoundingClientRect(), obstacles[1]);   // the button (the text above it may be passed behind)
+  toWorld(home.getBoundingClientRect(), obstacles[1]);   // the round button: characters roll off it
+  obstacles[1].r = Math.min(obstacles[1].hw, obstacles[1].hh);
 }
 addEventListener('resize', () => { layout(); wake(); });
 
