@@ -2,6 +2,8 @@
 // bounce and pile up around the big "404". They hold a still Idle pose; only physics moves them.
 // Physics: a small 2D solver with circle colliders: gravity, floor, walls, the "404" block
 // as a rounded box, character-to-character contacts, friction that makes them roll and tumble.
+// Performance: a quality tier picked from the device, characters prebuilt before the rain,
+// adaptive resolution, and no rendering at all once everything has come to rest.
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { Character } from './character.js';
@@ -13,10 +15,23 @@ import './notfound.css';
 const home = document.getElementById('home');
 home.href = import.meta.env.BASE_URL;
 
+/* ---------- quality tier from what the device reports ---------- */
+const cores = navigator.hardwareConcurrency || 4;
+const memory = navigator.deviceMemory || 4;                 // GB, Chromium only
+const small = Math.min(innerWidth, innerHeight) < 640;
+const TIER = cores <= 4 || memory <= 2 ? 'low' : small || cores <= 6 || memory <= 4 ? 'mid' : 'high';
+const Q = {
+  low:  { count: 6,  dpr: 1,    aa: false, cell: 0.07, materials: ['matte'] },
+  mid:  { count: 9,  dpr: 1.5,  aa: true,  cell: 0.06, materials: ['matte', 'matte', 'glass'] },
+  high: { count: 13, dpr: 1.75, aa: true,  cell: 0.05, materials: ['matte', 'matte', 'glass', 'glass'] },
+}[TIER];
+
 /* ---------- renderer & scene ---------- */
 const canvas = document.getElementById('c');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: Q.aa, alpha: true, powerPreference: TIER === 'low' ? 'low-power' : 'high-performance' });
+const MAX_DPR = Math.min(window.devicePixelRatio || 1, Q.dpr);
+let dpr = MAX_DPR;
+renderer.setPixelRatio(dpr);
 renderer.toneMapping = THREE.NeutralToneMapping;
 renderer.toneMappingExposure = 1.05;
 const scene = new THREE.Scene();
@@ -52,7 +67,7 @@ function layout() {
   toWorld(code, obstacles[0], code.height * 0.12, code.width * 0.02);
   toWorld(home.getBoundingClientRect(), obstacles[1]);   // the button (the text above it may be passed behind)
 }
-addEventListener('resize', layout);
+addEventListener('resize', () => { layout(); wake(); });
 
 /* ---------- random characters (same recipe as the site's "Random", minus the glow halo) ---------- */
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
@@ -63,7 +78,7 @@ function randomState() {
     ...DEFAULTS,
     shape: pick(Object.keys(SHAPES)), width: rnd(0.85, 1.2), height: rnd(0.85, 1.2), depth: rnd(0.8, 1.15),
     taper: Math.random() < 0.6 ? 0 : rnd(-0.4, 0.5), wobble: rnd(0.1, 0.7), seed: (Math.random() * 1000) | 0,
-    color: pick(PALETTE), color2: pick(PALETTE), material: pick(['matte', 'matte', 'glass', 'glass', 'plush']),
+    color: pick(PALETTE), color2: pick(PALETTE), material: pick(Q.materials), // no plush here: its fur is drawn as many extra layers
     eyes: pick(['dots', 'dots', 'googly', 'ovals', 'lines', 'pixel']), eyeSize: rnd(0.8, 1.3), eyeSpacing: rnd(0.26, 0.5), faceY: rnd(0.45, 0.66),
     arms: pick(['stubby', 'noodle', 'none']), legs: pick(['stubby', 'thin', 'none', 'stubby']),
     head: pick(['none', 'none', 'beret', 'cap', 'party', 'crown', 'sprout', 'antenna', 'bunny', 'cat', 'bow']),
@@ -80,20 +95,23 @@ const box = new THREE.Box3(), size = new THREE.Vector3(), center = new THREE.Vec
 function makeCharacter() {
   const st = randomState();
   const ch = new Character();
-  ch.buildBody(st, 0.05);                  // coarser mesh than the editor: these are small, and it builds ~4× faster
+  ch.buildBody(st, Q.cell);                // coarser mesh than the editor: these are small, and it builds several times faster
   ch.applyMaterial(st);
   ch.buildParts(st);
-  for (let i = 0; i < 45; i++) ch.update(1 / 30, st, noPointer); // settle the face into the emotion, then freeze
+  for (let i = 0; i < 20; i++) ch.update(1 / 20, st, noPointer); // settle the face into the emotion, then freeze
   ch.root.updateMatrixWorld(true);
+  // the pose never changes again: freeze every part's local matrix
+  ch.root.traverse((o) => { o.updateMatrix(); o.matrixAutoUpdate = false; });
   box.setFromObject(ch.root); box.getSize(size); box.getCenter(center);
   ch.root.position.sub(center);            // rotate around the middle of the character
+  ch.root.rotation.y = rnd(-0.45, 0.45);   // a little turned, so they read as 3D
+  ch.root.updateMatrix();
   const pivot = new THREE.Group();
   pivot.add(ch.root);
-  ch.root.rotation.y = rnd(-0.45, 0.45);   // a little turned, so they read as 3D
   const base = innerWidth < 640 ? 1.5 : 1.9;   // smaller on phones so they fit past the "404"
   const scale = rnd(0.72, 1.0) * base / Math.max(size.y, 1.4);
   pivot.scale.setScalar(scale);
-  return { pivot, r: 0.5 * Math.max(size.x * 0.92, size.y * 0.86) * scale };
+  return { pivot, r: 0.5 * Math.max(size.x * 0.92, size.y * 0.96) * scale };
 }
 
 /* ---------- physics ---------- */
@@ -102,6 +120,7 @@ const G = -26, E = 0.28, ROLL = 0.25;
 // Characters are built up front (one per frame while the page is still empty) and their shaders
 // compiled in one go, so the rain itself never stalls on meshing or shader compilation.
 const ready = [];
+const idle = (fn) => (window.requestIdleCallback ? requestIdleCallback(fn, { timeout: 60 }) : setTimeout(fn, 0));
 function prepare(count) {
   return new Promise((done) => {
     const next = () => {
@@ -109,7 +128,7 @@ function prepare(count) {
       c.pivot.position.set(0, 1e4, -ready.length * 3);   // parked far off screen; stable draw order
       scene.add(c.pivot);
       ready.push(c);
-      if (ready.length < count) setTimeout(next, 0);
+      if (ready.length < count) idle(next);
       else { renderer.compile(scene, camera); done(); }
     };
     next();
@@ -142,7 +161,7 @@ function step(dt) {
   }
   for (let it = 0; it < 3; it++) {
     for (const b of bodies) {
-      const floor = -H / 2, L = -W / 2, R = W / 2;
+      const floor = -H / 2 + 0.15, L = -W / 2, R = W / 2;   // floor a touch above the edge: tumbled characters stay in view
       if (b.y - b.r < floor) hitStatic(b, 0, 1, floor - (b.y - b.r));
       if (b.x - b.r < L) hitStatic(b, 1, 0, L - (b.x - b.r));
       if (b.x + b.r > R) hitStatic(b, -1, 0, b.x + b.r - R);
@@ -186,6 +205,7 @@ addEventListener('pointermove', (e) => {
   const now = performance.now(), dt = Math.max(0.008, (now - ptr.t) / 1000);
   if (ptr.on) { ptr.vx = (x - ptr.x) / dt; ptr.vy = (y - ptr.y) / dt; }
   Object.assign(ptr, { x, y, on: true, t: now });
+  if (bodies.some((b) => Math.hypot(b.x - x, b.y - y) < b.r * 1.2)) wake();
 });
 addEventListener('pointerleave', () => { ptr.on = false; });
 function nudge() {
@@ -201,25 +221,45 @@ function nudge() {
 }
 
 /* ---------- loop ---------- */
-const COUNT = innerWidth < 640 ? 8 : 14;
-let spawnClock = 0.1, last = performance.now(), raining = false;
+const COUNT = small ? Math.min(Q.count, 7) : Q.count;
+let spawnClock = 0.1, last = 0, raining = false, running = false, still = 0;
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+// frame-time watchdog: if frames are slow for ~1.5 s, draw fewer pixels
+const perf = { t: 0, n: 0, sum: 0 };
+function watch(dt) {
+  perf.t += dt; perf.n++; perf.sum += dt;
+  if (perf.t < 1.5) return;
+  const avg = perf.sum / perf.n;
+  perf.t = perf.n = perf.sum = 0;
+  if (avg > 1 / 45 && dpr > 0.75) { dpr = Math.max(0.75, dpr - 0.25); renderer.setPixelRatio(dpr); renderer.setSize(innerWidth, innerHeight, false); }
+}
 function tick(dt) {
   spawnClock -= dt;
   if (raining && bodies.length < COUNT && spawnClock <= 0) { spawn(); spawnClock = reduce ? 0 : rnd(0.25, 0.6); }
   nudge();
-  const n = 4; for (let i = 0; i < n; i++) step(dt / n);
+  for (let i = 0; i < 3; i++) step(dt / 3);
   for (const b of bodies) { b.pivot.position.x = b.x; b.pivot.position.y = b.y; b.pivot.rotation.z = b.a; }
   renderer.render(scene, camera);
+  // everyone has landed and stopped: time to rest
+  const moving = bodies.some((b) => Math.abs(b.vx) + Math.abs(b.vy) > 0.06 || Math.abs(b.w) > 0.06);
+  still = moving || bodies.length < COUNT ? 0 : still + dt;
+  return still < 0.6;
 }
 function frame(now) {
-  tick(Math.min(0.05, (now - last) / 1000)); last = now;
-  requestAnimationFrame(frame);
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  watch(dt);
+  if (tick(dt)) requestAnimationFrame(frame);
+  else running = false;                    // asleep: no physics and no rendering until something wakes it
 }
-window.__nf = { bodies, tick, makeCharacter }; // debugging handle
+function wake() {
+  if (running || !raining) return;
+  running = true; still = 0;
+  requestAnimationFrame((t) => { last = t; frame(t); });
+}
+window.__nf = { bodies, tick, tier: TIER, get running() { return running; } }; // debugging handle
 (document.fonts ? document.fonts.ready : Promise.resolve()).then(async () => {
   layout();
-  requestAnimationFrame((t) => { last = t; frame(t); });
   await prepare(COUNT);
   raining = true;
+  wake();
 });
