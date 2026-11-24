@@ -78,7 +78,9 @@ scene.add(hero.root, hero.fx);
 // soft screen-space halo for the glow material (same on screen, in PNG and in video)
 const halo = createHalo(renderer);
 scene.add(halo.mesh);
+let exp = null;   // export renderer, created on the first export (see renderExport)
 function draw() {
+  if (exp) exp.halo.mesh.visible = false;
   halo.prepare(scene, camera, { on: state.material === 'glow', c1: state.color, c2: state.color2, hide: [hero.fx] });
   renderer.render(scene, camera);
 }
@@ -275,26 +277,70 @@ const embedModal = createEmbedModal({
   toast,
 });
 
-// Exports are square and rendered at a fixed, doubled resolution (independent of the window):
-// the drawing buffer is switched to the export size for one frame, copied out, then restored.
+// Exports are square and rendered at a fixed, doubled resolution (independent of the window).
+// They use a second, dedicated renderer with its own canvas at the export size: the on-screen
+// canvas is never resized, and each video frame costs exactly one draw (no buffer reallocations,
+// no extra screen redraw), so frames reach the encoder on time and the clip plays smoothly.
 const PNG_SIZE = 2048, VIDEO_SIZE = 1440;
-function renderSquare(size, ctx, transparent) {
-  const savedDpr = renderer.getPixelRatio();
-  renderer.setPixelRatio(1);
-  renderer.setSize(size, size, false);
-  camera.aspect = 1;
-  camera.fov = 32;                       // the site's base field of view: same character size as on screen
-  camera.clearViewOffset();              // centred, no shift for the settings panel
-  camera.updateProjectionMatrix();
+function exportRenderer() {
+  if (exp) return exp;
+  const r = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
+  r.setPixelRatio(1);
+  r.toneMapping = renderer.toneMapping;
+  r.toneMappingExposure = renderer.toneMappingExposure;
+  // the environment map is a GPU texture of the main renderer: this context needs its own
+  const pm = new THREE.PMREMGenerator(r);
+  const env = pm.fromScene(new RoomEnvironment(), 0.04).texture;
+  pm.dispose();
+  const h = createHalo(r);
+  h.mesh.visible = false;
+  scene.add(h.mesh);
+  exp = { r, env, halo: h, cam: new THREE.PerspectiveCamera(), size: 0 };
+  return exp;
+}
+// Draws the current pose into the export renderer and returns its canvas.
+function renderExport(size, transparent) {
+  const e = exportRenderer();
+  if (e.size !== size) { e.r.setSize(size, size, false); e.size = size; }
+  e.cam.copy(camera);
+  e.cam.aspect = 1;
+  e.cam.fov = 32;                         // the site's base field of view: same character size as on screen
+  e.cam.clearViewOffset();                // centred, no shift for the settings panel
+  e.cam.updateProjectionMatrix();
+  const env = scene.environment, bg = scene.background;
+  scene.environment = e.env;
   scene.background = transparent ? null : SITE_BG;
-  draw();
+  halo.mesh.visible = false;              // the on-screen halo belongs to the other renderer
+  e.halo.prepare(scene, e.cam, { on: state.material === 'glow', c1: state.color, c2: state.color2, hide: [hero.fx] });
+  e.r.render(scene, e.cam);
+  e.halo.mesh.visible = false;
+  scene.environment = env; scene.background = bg;
+  return e.r.domElement;
+}
+// Time a few frames at each size (after a first draw that compiles the shaders) and keep the
+// largest size that leaves headroom inside the 33 ms a 30 fps frame has.
+async function pickVideoSize(transparent) {
+  const gl = exportRenderer().r.getContext();
+  const px = new Uint8Array(4);
+  for (const size of [VIDEO_SIZE, 1080, 720]) {
+    renderExport(size, transparent); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    const times = [];
+    for (let i = 0; i < 5; i++) {
+      const t = performance.now();
+      renderExport(size, transparent);
+      gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);   // wait for the GPU to finish the frame
+      times.push(performance.now() - t);
+      await new Promise((r) => setTimeout(r, 0));
+    }
+    times.sort((x, y) => x - y);
+    if (times[2] < 18 || size === 720) return size;
+  }
+  return 720;
+}
+function renderSquare(size, ctx, transparent) {
+  const src = renderExport(size, transparent);
   ctx.clearRect(0, 0, size, size);
-  ctx.drawImage(canvas, 0, 0, size, size);
-  // back to the on-screen view
-  scene.background = SITE_BG;
-  renderer.setPixelRatio(savedDpr);
-  resize();
-  draw();
+  ctx.drawImage(src, 0, 0, size, size);
 }
 function squareCanvas(size) {
   const c = document.createElement('canvas');
@@ -373,11 +419,13 @@ async function exportVideo(format = 'webm') {
   const chunks = [];
   let rec = null, videoTrack = null, failed = null;   // (not "track": that name is the analytics function)
   try {
-    const [out, octx] = squareCanvas(VIDEO_SIZE);
-    const renderFrame = () => renderSquare(VIDEO_SIZE, octx, transparent);
+    // Pick a size this device can draw on time: a late frame becomes a stutter in the file.
+    const size = await pickVideoSize(transparent);
+    const out = renderExport(size, transparent);   // the export renderer's own canvas is recorded directly
+    const renderFrame = () => renderExport(size, transparent);
     const stream = out.captureStream(0);
     videoTrack = stream.getVideoTracks()[0];
-    rec = new MediaRecorder(stream, { mimeType: type, videoBitsPerSecond: 24e6 });
+    rec = new MediaRecorder(stream, { mimeType: type, videoBitsPerSecond: 16e6 });
     rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
     rec.onerror = (e) => { failed = failed || (e.error || new Error('recorder error')); };
     var stopped = new Promise((r) => { rec.onstop = r; });
@@ -388,7 +436,7 @@ async function exportVideo(format = 'webm') {
       controls.update();
       renderFrame();
       videoTrack.requestFrame();
-      if (k % 10 === 0) toast(`Rendering loop… ${Math.round((k / frames) * 100)}%`);
+      if (k % 6 === 0) toast(`Rendering video… ${Math.round((k / frames) * 100)}%`);
       // frames go out at video speed so the encoder timestamps match the clip
       const wait = t0 + (k + 1) * stepReal * 1000 - performance.now();
       await new Promise((r) => setTimeout(r, Math.max(0, wait)));
