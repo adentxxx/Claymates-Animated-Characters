@@ -1,0 +1,30 @@
+:root { --ink: #17171f; --muted: #6d6f80; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; }
+body {
+  font-family: Manrope, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased;
+  background: radial-gradient(120% 90% at 50% 38%, #fbfbfe 0%, #eef0f6 55%, #e1e3eb 100%);
+}
+/* the characters fall in front of "404" but behind the text and the button */
+#c { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 1; touch-action: none; }
+.nf {
+  position: fixed; inset: 0; z-index: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 16px; pointer-events: none;
+}
+.nf-code {
+  margin: 0; font: 800 clamp(80px, 22vw, 320px)/0.9 Unbounded, 'Arial Black', sans-serif; letter-spacing: -0.04em;
+  background: linear-gradient(135deg, #5b5cf0 0%, #ff3fbf 55%, #ffc531 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
+  user-select: none;
+}
+.nf-front { z-index: 2; }
+.nf-back .nf-text, .nf-back .nf-btn { visibility: hidden; }
+.nf-ghost { visibility: hidden; }       /* keeps the front layer laid out exactly like the back one */
+.nf-cta { display: flex; flex-direction: column; align-items: center; }
+.nf-text { margin: 18px 0 22px; font-size: 16px; font-weight: 600; color: var(--muted); }
+.nf-btn {
+  pointer-events: auto; display: inline-flex; align-items: center; height: 46px; padding: 0 22px;
+  border-radius: 14px; background: var(--ink); color: #fff; font-weight: 800; font-size: 15px; text-decoration: none;
+  box-shadow: 0 10px 28px rgba(20, 20, 40, .18); transition: transform .15s, background .15s;
+}
+.nf-btn:hover { background: #2a2a36; transform: translateY(-1px); }
+.nf-btn:focus-visible { outline: 3px solid #5b5cf0; outline-offset: 3px; }

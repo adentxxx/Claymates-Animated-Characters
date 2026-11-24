@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#eef0f6" />
+  <meta name="robots" content="noindex" />
+  <title>404 — Page not found · ClayMates</title>
+  <link rel="icon" href="/favicon.ico" sizes="48x48" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;800&family=Unbounded:wght@800&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <canvas id="c" aria-hidden="true"></canvas>
+  <!-- two layers with the same layout: "404" behind the characters, text and button in front -->
+  <div class="nf nf-back" aria-hidden="true">
+    <div class="nf-code" id="code">404</div>
+    <p class="nf-text">This page wandered off. Everyone else is right here.</p>
+    <span class="nf-btn">Back to ClayMates</span>
+  </div>
+  <main class="nf nf-front">
+    <h1 class="nf-code nf-ghost">404</h1>
+    <div class="nf-cta">
+      <p class="nf-text">This page wandered off. Everyone else is right here.</p>
+      <a class="nf-btn" id="home" href="/">Back to ClayMates</a>
+    </div>
+  </main>
+  <script type="module" src="/src/notfound.js"></script>
+</body>
+</html>

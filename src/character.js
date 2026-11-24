@@ -111,7 +111,9 @@ export class Character {
   /* ================= building ================= */
   buildBody(st, quality = 'high') {
     const sdf = makeSDF(st);
-    const geo = buildBodyGeometry(sdf, quality === 'low' ? 0.07 : 0.032, quality !== 'low');
+    // quality: 'high' | 'low' (fast preview while dragging) | a mesh cell size in world units
+    const cell = typeof quality === 'number' ? quality : quality === 'low' ? 0.07 : 0.032;
+    const geo = buildBodyGeometry(sdf, cell, quality !== 'low');
     this.bodyMesh.geometry.dispose();
     this.bodyMesh.geometry = geo;
     for (const m of this.furGroup.children) m.geometry = geo;
