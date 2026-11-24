@@ -168,7 +168,6 @@ body[data-stage="anim"] .presets-wrap { display: none; }
 .about-gh svg:last-child { width: 15px; height: 15px; color: rgba(255,255,255,.55); transition: transform .2s, color .2s; }
 .about-gh:hover svg:last-child { color: #fff; transform: translate(1px, -1px); }
 .about-by { margin: 0; padding: 9px 8px 5px; display: flex; align-items: center; gap: 5px; font-size: 12.5px; color: rgba(255,255,255,.6); white-space: nowrap; }
-.about-by svg { width: 14px; height: 14px; }
 .about-by a { color: #fff; font-weight: 800; text-decoration: none; }
 .about-by a:hover { text-decoration: underline; text-underline-offset: 2px; }
 .about-tip a:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
