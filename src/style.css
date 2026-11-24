@@ -407,7 +407,8 @@ body.embed #panel, body.embed .presets-wrap, body.embed .stage-dock, body.embed 
 
 /* ---------- cookie consent: "Cookie bite" ---------- */
 .cb {
-  position: fixed; left: var(--inset); bottom: calc(var(--inset) + 68px); z-index: 40;   /* above the «i» button and clear of the bottom bar */
+  /* bottom-left corner, over the «i» button; pinned by its bottom edge, so folding shrinks it downwards */
+  position: fixed; left: var(--inset); bottom: var(--inset); z-index: 40;
   transform: translateY(var(--cb-y, 0px));
   background: #fff; border: var(--float-edge); box-shadow: var(--float-shadow); border-radius: 20px;
   will-change: transform, width, height, opacity;
@@ -456,9 +457,9 @@ body.embed #panel, body.embed .presets-wrap, body.embed .stage-dock, body.embed 
 .cb-done path { fill: none; stroke: var(--ink); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1 1; }
 .cb-done.is-yes path { stroke: #fff; }
 body.embed .cb, body.intro .cb { display: none !important; }
-/* phones: the settings sheet owns the bottom, so the banner sits at the top under the presets */
+/* phones: centred at the bottom of the screen, over the settings sheet */
 @media (max-width: 860px) {
-  .cb { left: 50%; bottom: auto; top: 64px; transform: translate(-50%, calc(var(--cb-y, 0px) * -1)); }
+  .cb { left: 50%; bottom: 12px; transform: translate(-50%, var(--cb-y, 0px)); }
 }
 /* «Cookie settings» link in the about tooltip */
 .about-cookies { display: block; margin: 0 8px 4px; padding: 0; border: 0; background: none; font: 700 12px Manrope, sans-serif; color: rgba(255,255,255,.55); cursor: pointer; text-align: left; }
