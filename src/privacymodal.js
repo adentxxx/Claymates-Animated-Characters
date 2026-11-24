@@ -1,7 +1,11 @@
 // "Learn more" from the cookie banner: a small modal that names the analytics services,
 // what they collect and how to change the choice. Same look as the "Export code" modal.
-const SERVICES = [
+// Only the services that have an ID in analytics.config.js are listed.
+import { YANDEX_METRIKA_ID, GA4_ID } from './analytics.config.js';
+
+const ALL_SERVICES = [
   {
+    on: Boolean(YANDEX_METRIKA_ID),
     name: 'Yandex Metrica',
     who: 'Yandex LLC, Russia',
     what: 'Visits, pages, time on site, clicks, scrolling and anonymised session recordings (Webvisor), approximate location from the IP address, device and browser.',
@@ -9,6 +13,7 @@ const SERVICES = [
     link: 'https://yandex.com/legal/confidential/',
   },
   {
+    on: Boolean(GA4_ID),
     name: 'Google Analytics 4',
     who: 'Google LLC, USA',
     what: 'Visits, time on site, events, approximate location, device and browser. IP addresses are not stored.',
@@ -16,6 +21,8 @@ const SERVICES = [
     link: 'https://policies.google.com/privacy',
   },
 ];
+const SERVICES = ALL_SERVICES.filter((s) => s.on);
+const COUNT = ['no', 'one', 'two'][SERVICES.length] || String(SERVICES.length);
 
 export function createPrivacyModal() {
   const root = document.createElement('div');
@@ -29,7 +36,7 @@ export function createPrivacyModal() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
         </button>
       </header>
-      <p class="em-lead">If you accept cookies, ClayMates uses two analytics services to learn how the site is used: which shapes, materials and animations people pick, and what they download. Nothing is loaded until you accept.</p>
+      <p class="em-lead">If you accept cookies, ClayMates uses ${COUNT} analytics service${SERVICES.length === 1 ? '' : 's'} to learn how the site is used: which shapes, materials and animations people pick, and what they download. Nothing is loaded until you accept.</p>
       <ul class="pm-list">
         ${SERVICES.map((s) => `
           <li>

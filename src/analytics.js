@@ -48,8 +48,10 @@ function start() {
     window.ym = window.ym || function () { (window.ym.a = window.ym.a || []).push(arguments); };
     window.ym.l = Date.now();
     window.ym(Number(YM), 'init', {
-      webvisor: true, clickmap: true, trackLinks: true, accurateTrackBounce: true,
-      trackHash: false,            // the hash holds the character and changes on every edit
+      ssr: true, webvisor: true, clickmap: true, trackLinks: true, accurateTrackBounce: true,
+      ecommerce: 'dataLayer', referrer: document.referrer,
+      url: location.origin + location.pathname,   // without the hash: it is the whole character, base64
+      trackHash: false,            // the hash changes on every edit: each one would count as a new page view
     });
   }
   if (GA) {
@@ -60,7 +62,7 @@ function start() {
     window.gtag('config', GA, { page_location: location.origin + location.pathname, page_title: document.title });
   }
   whenIdle(() => {
-    if (YM) loadScript('https://mc.yandex.ru/metrika/tag.js');
+    if (YM) loadScript('https://mc.yandex.ru/metrika/tag.js?id=' + encodeURIComponent(YM));
     if (GA) loadScript('https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(GA));
   });
 }
