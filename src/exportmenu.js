@@ -13,7 +13,7 @@ const SPRING = {
 const ROW = 40, PAD = 6;
 const svg = (p, sw = 1.9) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
 
-export function createActionMenu(root, items, { trigger, onRun, up = true }) {
+export function createActionMenu(root, items, { trigger, onRun, onSoon, up = true }) {
   root.classList.add('xp');
   root.innerHTML = `
     <div class="xp-menu${up ? ' up' : ''}" role="menu" aria-label="Download"><div class="xp-inner">
@@ -58,7 +58,7 @@ export function createActionMenu(root, items, { trigger, onRun, up = true }) {
     wake();
   }
   function pick(i) {
-    if (off(i)) return;
+    if (off(i)) { if (onSoon) onSoon(items[i].id); return; }
     after(0.12, () => setOpen(false));
     onRun(items[i].id);
   }

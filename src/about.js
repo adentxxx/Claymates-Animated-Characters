@@ -2,6 +2,7 @@
 // same look and spring motion as the stage tab bar's morph tooltip: it pops up from its
 // tail with a little overshoot. Inside: a link to the GitHub repo and to the developer.
 import { S, step, clamp, settled, register } from './motion.js';
+import { track } from './analytics.js';
 
 const SHOW = [420, 24]; // same spring as the stage bar tooltip
 const GITHUB = 'https://github.com/adentxxx/Claymates-Animated-Characters';
@@ -35,11 +36,17 @@ export function createAbout(root) {
       <a class="about-gh" href="${GITHUB}" target="_blank" rel="noopener">${GH_ICON}<span>Project on GitHub</span>${ARROW}</a>
       <p class="about-by">Prod. by <a href="${DEV}" target="_blank" rel="noopener">hereisalex</a></p>
     </div>`;
+  root.querySelector('.about-gh').addEventListener('click', () => track('github_click'));
+  root.querySelector('.about-by a').addEventListener('click', () => track('developer_click'));
   const btn = root.querySelector('.about-btn'), tip = root.querySelector('.about-tip'), tail = root.querySelector('.about-tail');
   const A = S(0, SHOW);
   let hideT = null, awake = true, pinned = false;
 
-  function show() { clearTimeout(hideT); hideT = null; A.t = 1; awake = true; btn.setAttribute('aria-expanded', 'true'); }
+  let opened = false;
+  function show() {
+    clearTimeout(hideT); hideT = null; A.t = 1; awake = true; btn.setAttribute('aria-expanded', 'true');
+    if (!opened) { opened = true; track('about_open'); }
+  }
   function hide(delay = 0.14) {
     clearTimeout(hideT);
     hideT = setTimeout(() => { hideT = null; pinned = false; A.t = 0; awake = true; btn.setAttribute('aria-expanded', 'false'); }, delay * 1000);

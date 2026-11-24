@@ -10,10 +10,14 @@ import { Character } from './character.js';
 import { DEFAULTS, PALETTE } from './presets.js';
 import { SHAPES } from './sdf.js';
 import { EMOTIONS } from './animations.js';
+import { track } from './analytics.js';
 import './notfound.css';
 
 const home = document.getElementById('home');
 home.href = import.meta.env.BASE_URL;
+track('page_404', { path: location.pathname });
+home.addEventListener('click', () => track('404_home_click'));
+let pushed = false;
 
 /* ---------- quality tier from what the device reports ---------- */
 const cores = navigator.hardwareConcurrency || 4;
@@ -216,6 +220,7 @@ function nudge() {
       b.vx += (ptr.vx * 0.5 - b.vx) * 0.35 + (dx / (d || 1)) * 2;
       b.vy += (ptr.vy * 0.5 - b.vy) * 0.35 + (dy / (d || 1)) * 2 + 3;
       b.w += (Math.random() - 0.5) * 6;
+      if (!pushed) { pushed = true; track('404_character_push'); }
     }
   }
 }

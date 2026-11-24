@@ -180,7 +180,7 @@ export const STAGES = [
 const DICE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><circle cx="8.5" cy="8.5" r=".9" fill="currentColor"/><circle cx="15.5" cy="15.5" r=".9" fill="currentColor"/><circle cx="15.5" cy="8.5" r=".9" fill="currentColor"/><circle cx="8.5" cy="15.5" r=".9" fill="currentColor"/><circle cx="12" cy="12" r=".9" fill="currentColor"/></svg>';
 const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 
-export function createUI({ state, onChange, onPreset, onRandom }) {
+export function createUI({ state, onChange, onPreset, onRandom, onTab }) {
   const tabsEl = document.getElementById('tabs');
   const ctrlEl = document.getElementById('controls');
   const refreshers = [];
@@ -218,6 +218,7 @@ export function createUI({ state, onChange, onPreset, onRandom }) {
 
   function select(id, snap = false) {
     const prev = curTab;
+    if (!snap && id !== prev && onTab) onTab(id);
     lastTab[stage.id] = id;
     store('claymates.tab.' + stage.id, id);
     curTab = id;

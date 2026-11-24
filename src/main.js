@@ -8,6 +8,7 @@ import { createActionMenu } from './exportmenu.js';
 import { createEmbedModal } from './embedmodal.js';
 import { createHalo } from './halo.js';
 import { createAbout } from './about.js';
+import { track, trackSetting, characterSummary } from './analytics.js';
 import { DEFAULTS, PRESETS, PALETTE, presetState } from './presets.js';
 import { SHAPES } from './sdf.js';
 import { normalizeMaterial } from './materials.js';
@@ -93,6 +94,7 @@ function onChange(k, live) {
   else if (SCENE_KEYS.has(k)) pending.scene = true;
   else if (!RUNTIME_KEYS.has(k)) pending.parts = true;
   saveHashSoon();
+  trackSetting(k, state[k]);
 }
 function flush() {
   if (pending.mesh) {
@@ -152,16 +154,17 @@ function frameCharacter() {
 const ui = createUI({
   state,
   onChange,
-  onRandom: () => randomize(),
-  onPreset: (i) => { Object.assign(state, presetState(i)); hero.clearParticles(); rebuildAll(); ui.refresh(); saveHashSoon(); },
+  onRandom: () => { randomize(); track('random_character', characterSummary(state)); },
+  onTab: (tab) => track('tab_open', { tab }),
+  onPreset: (i) => { track('preset_select', { preset: PRESETS[i].name }); Object.assign(state, presetState(i)); hero.clearParticles(); rebuildAll(); ui.refresh(); saveHashSoon(); },
 });
 
 /* ---------------- stage bar: Дизайн / Анимация ---------------- */
 const stageItems = STAGES.map((st, i) => ({ id: st.id, title: st.title, key: String(i + 1) }));
 const stageBar = createStageBar(document.getElementById('stagebar'), stageItems, {
   initial: ui.stage,
-  onSelect: (id) => ui.setStage(id),
-  action: { id: 'download', title: 'Download', onClick: () => {} }, // opens the action menu below
+  onSelect: (id) => { ui.setStage(id); track('stage_open', { stage: id, via: 'click' }); },
+  action: { id: 'download', title: 'Download', onClick: () => track('download_menu_open') }, // opens the action menu below
 });
 window.addEventListener('keydown', (e) => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -171,6 +174,7 @@ window.addEventListener('keydown', (e) => {
   if (!item || item.id === ui.stage) return;
   ui.setStage(item.id);
   stageBar.select(item.id);
+  track('stage_open', { stage: item.id, via: 'keyboard' });
 });
 
 // pasting another character link into the address bar switches to it without a reload
@@ -234,7 +238,7 @@ const exportMenu = createActionMenu(document.getElementById('export-menu'), [
   { id: 'mp4', label: 'Download MP4 video', icon: ICON.video },
   { id: 'link', label: 'Copy link', icon: ICON.link },
   { id: 'embed', label: 'Export code', icon: ICON.embed, soon: true }, // enabled once the site is published
-], { trigger: stageBar.actionEl, up: true, onRun: (id) => ({ png: exportPNG, webm: () => exportVideo('webm'), mp4: () => exportVideo('mp4'), link: copyLink, embed: () => embedModal.open() })[id]() });
+], { trigger: stageBar.actionEl, up: true, onSoon: (id) => track('soon_click', { item: id }), onRun: (id) => ({ png: exportPNG, webm: () => exportVideo('webm'), mp4: () => exportVideo('mp4'), link: copyLink, embed: () => embedModal.open() })[id]() });
 createAbout(document.getElementById('about'));
 
 const embedModal = createEmbedModal({
@@ -270,6 +274,7 @@ function squareCanvas(size) {
   return [c, c.getContext('2d')];
 }
 function exportPNG() {
+  track('export_png', characterSummary(state));
   const [out, ctx] = squareCanvas(PNG_SIZE);
   renderSquare(PNG_SIZE, ctx, true);
   out.toBlob((blob) => download(blob, 'claymate.png'), 'image/png');
@@ -297,10 +302,12 @@ async function exportVideo(format = 'webm') {
   if (recording) return;
   const type = window.MediaRecorder && VIDEO_TYPES[format].find((t) => MediaRecorder.isTypeSupported(t));
   if (!type) {
+    track('export_video_unsupported', { format });
     toast(format === 'mp4' ? 'This browser can’t record MP4. Open the site in Chrome, Edge or Safari' : 'This browser can’t record WebM. Open the site in Chrome, Edge or Firefox');
     return;
   }
   const transparent = format === 'webm';
+  track('export_video', { format, ...characterSummary(state) });
   recording = true;
   exportMenu.setBusy(true);
 
@@ -361,6 +368,7 @@ async function exportVideo(format = 'webm') {
 }
 async function copyLink() {
   history.replaceState(null, '', '#' + encodeState());
+  track('copy_link', characterSummary(state));
   try { await navigator.clipboard.writeText(location.href); toast('Character link copied'); }
   catch { toast('The link is in the address bar'); }
 }
@@ -475,5 +483,15 @@ function frame() {
   requestAnimationFrame(frame);
 }
 frame();
+
+// analytics: the first drag-to-rotate of the visit, and the character the visitor ends up with
+let rotated = false;
+controls.addEventListener('start', () => { if (!rotated) { rotated = true; track('character_rotate'); } });
+let reported = false;
+addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'hidden' || reported || EMBED) return;
+  reported = true;
+  track('final_character', characterSummary(state));
+});
 
 window.__claymates = { state, hero, renderer, scene, camera, exportVideo, draw };
