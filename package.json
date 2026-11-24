@@ -11,6 +11,7 @@
     "deploy": "vite build && node scripts/deploy.mjs"
   },
   "dependencies": {
+    "mediabunny": "1.65.2",
     "three": "^0.170.0"
   },
   "devDependencies": {

@@ -385,16 +385,25 @@ const VIDEO_TYPES = {
 };
 async function exportVideo(format = 'webm') {
   if (recording) return;
-  const type = window.MediaRecorder && VIDEO_TYPES[format].find((t) => MediaRecorder.isTypeSupported(t));
-  if (!type) {
+  const transparent = format === 'webm';
+  recording = true;
+  exportMenu.setBusy(true);
+  toast('Preparing video…');
+  // Preferred: frame-exact encoding (WebCodecs + Mediabunny, loaded on demand).
+  // Fallback for browsers without it: MediaRecorder, which works in real time.
+  let enc = null;
+  try {
+    const mod = await import('./videoexport.js');
+    if (await mod.canEncode(format, VIDEO_SIZE, transparent)) enc = mod;
+  } catch { /* module failed to load: use the fallback */ }
+  const type = !enc && window.MediaRecorder && VIDEO_TYPES[format].find((t) => MediaRecorder.isTypeSupported(t));
+  if (!enc && !type) {
+    recording = false; exportMenu.setBusy(false);
     track('export_video_unsupported', { format });
     showError(format === 'mp4' ? 'This browser can’t record MP4. Try Chrome, Edge or Safari.' : 'This browser can’t record WebM. Try Chrome, Edge or Firefox.');
     return;
   }
-  const transparent = format === 'webm';
-  track('export_video', { format, ...characterSummary(state) });
-  recording = true;
-  exportMenu.setBusy(true);
+  track('export_video', { format, encoder: enc ? 'webcodecs' : 'mediarecorder', ...characterSummary(state) });
 
   const P = (ANIMS[state.anim] || ANIMS.idle).period;            // loop length, animation seconds
   const cycles = Math.max(1, Math.ceil((MIN_CLIP * state.speed) / P)); // whole loops, at least MIN_CLIP long
@@ -414,32 +423,42 @@ async function exportVideo(format = 'webm') {
   for (let i = 0, n = Math.round(warm / stepAnim) - 1; i < n; i++) hero.update(stepReal, state, noPointer);
   hero.time = warm - stepAnim; // trims float drift; the first captured frame lands on the loop start
 
-  // Each video frame is rendered square at VIDEO_SIZE into a hidden canvas, and then the
-  // normal view is drawn again, so the screen never jumps during export.
+  const nextPose = () => { hero.update(stepReal, state, noPointer); controls.update(); };
+  let blob = null, failed = null;
+  // (local names avoid "track": that is the analytics function)
+  let rec = null, videoTrack = null, stopped = null;
   const chunks = [];
-  let rec = null, videoTrack = null, failed = null;   // (not "track": that name is the analytics function)
   try {
-    // Pick a size this device can draw on time: a late frame becomes a stutter in the file.
-    const size = await pickVideoSize(transparent);
-    const out = renderExport(size, transparent);   // the export renderer's own canvas is recorded directly
-    const renderFrame = () => renderExport(size, transparent);
-    const stream = out.captureStream(0);
-    videoTrack = stream.getVideoTracks()[0];
-    rec = new MediaRecorder(stream, { mimeType: type, videoBitsPerSecond: 16e6 });
-    rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
-    rec.onerror = (e) => { failed = failed || (e.error || new Error('recorder error')); };
-    var stopped = new Promise((r) => { rec.onstop = r; });
-    rec.start();
-    const t0 = performance.now();
-    for (let k = 0; k < frames && !failed; k++) {
-      hero.update(stepReal, state, noPointer);
-      controls.update();
-      renderFrame();
-      videoTrack.requestFrame();
-      if (k % 6 === 0) toast(`Rendering video… ${Math.round((k / frames) * 100)}%`);
-      // frames go out at video speed so the encoder timestamps match the clip
-      const wait = t0 + (k + 1) * stepReal * 1000 - performance.now();
-      await new Promise((r) => setTimeout(r, Math.max(0, wait)));
+    if (enc) {
+      // every frame at full size with its exact timestamp: smooth regardless of drawing speed
+      const canvasEl = renderExport(VIDEO_SIZE, transparent);
+      let shown = -1;
+      blob = await enc.encodeLoop({
+        format, canvas: canvasEl, frames, fps: frames / real, transparent,
+        drawFrame: () => { nextPose(); renderExport(VIDEO_SIZE, transparent); },
+        onProgress: (p) => { const pc = Math.round(p * 100); if (pc >= shown + 5) { shown = pc; toast(`Rendering video… ${pc}%`); } },
+      });
+    } else {
+      // real-time fallback: pick a size this device can draw on time (a late frame is a stutter)
+      const size = await pickVideoSize(transparent);
+      const out = renderExport(size, transparent);
+      const stream = out.captureStream(0);
+      videoTrack = stream.getVideoTracks()[0];
+      rec = new MediaRecorder(stream, { mimeType: type, videoBitsPerSecond: 16e6 });
+      rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+      rec.onerror = (e) => { failed = failed || (e.error || new Error('recorder error')); };
+      stopped = new Promise((r) => { rec.onstop = r; });
+      rec.start();
+      const t0 = performance.now();
+      for (let k = 0; k < frames && !failed; k++) {
+        nextPose();
+        renderExport(size, transparent);
+        videoTrack.requestFrame();
+        if (k % 6 === 0) toast(`Rendering video… ${Math.round((k / frames) * 100)}%`);
+        // frames go out at video speed so the encoder timestamps match the clip
+        const wait = t0 + (k + 1) * stepReal * 1000 - performance.now();
+        await new Promise((r) => setTimeout(r, Math.max(0, wait)));
+      }
     }
   } catch (err) {
     failed = err;
@@ -453,13 +472,14 @@ async function exportVideo(format = 'webm') {
     recording = false;
     exportMenu.setBusy(false);
   }
-  if (!failed && !chunks.length) failed = new Error('empty recording');
+  if (!enc && !failed) blob = chunks.length ? new Blob(chunks, { type: type.split(';')[0] }) : null;
+  if (!failed && (!blob || !blob.size)) failed = new Error('empty recording');
   if (failed) {
-    track('export_error', { kind: format, message: String(failed.message || failed).slice(0, 120) });
+    track('export_error', { kind: format, encoder: enc ? 'webcodecs' : 'mediarecorder', message: String(failed.message || failed).slice(0, 120) });
     showError(`Couldn’t record the ${format.toUpperCase()} video.`, () => exportVideo(format));
     return;
   }
-  download(new Blob(chunks, { type: type.split(';')[0] }), `claymate-${state.anim}-loop.${format}`);
+  download(blob, `claymate-${state.anim}-loop.${format}`);
   toast(`${real.toFixed(1)} s loop ready${transparent ? ', transparent background' : ''}`);
 }
 async function copyLink() {
