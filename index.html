@@ -4,20 +4,47 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#eef0f6" />
-  <title>Claymates — пластилиновые 3D-персонажи</title>
-  <meta name="description" content="Конструктор объёмных пластилиновых 3D-персонажей: форма, эмоции, аксессуары и готовые анимации." />
-  <!-- link preview (Telegram, VK, X, Slack…) -->
+  <title>ClayMates — конструктор 3D-персонажей с анимацией</title>
+  <meta name="description" content="Собери милого объёмного 3D-персонажа: форма, материал, эмоции, аксессуары и готовые анимации. Скачай PNG с прозрачным фоном или зацикленное видео WebM и MP4 — бесплатно, прямо в браузере." />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="hereisalex" />
   <link rel="canonical" href="https://adentxxx.github.io/Claymates-Animated-Characters/" />
-  <meta property="og:url" content="https://adentxxx.github.io/Claymates-Animated-Characters/" />
+  <!-- link previews (Telegram, VK, X, Slack, WhatsApp…) -->
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="Squish — собери своего 3D-персонажа" />
-  <meta property="og:description" content="Форма, материал, эмоции, аксессуары и готовые анимации. Скачай PNG с прозрачным фоном или зацикленное видео." />
+  <meta property="og:site_name" content="ClayMates" />
+  <meta property="og:locale" content="ru_RU" />
+  <meta property="og:url" content="https://adentxxx.github.io/Claymates-Animated-Characters/" />
+  <meta property="og:title" content="ClayMates — конструктор 3D-персонажей с анимацией" />
+  <meta property="og:description" content="Форма, материал, эмоции, аксессуары и готовые анимации. PNG с прозрачным фоном и зацикленное видео — бесплатно, в браузере." />
   <meta property="og:image" content="https://adentxxx.github.io/Claymates-Animated-Characters/og-cover.jpg" />
+  <meta property="og:image:type" content="image/jpeg" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="Squish — светящийся логотип и ряд объёмных персонажей на чёрном фоне" />
+  <meta property="og:image:alt" content="ClayMates — пушистый красный 3D-персонаж с ростком и надпись ClayMates на тёмном фоне" />
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="ClayMates — конструктор 3D-персонажей с анимацией" />
+  <meta name="twitter:description" content="Форма, материал, эмоции, аксессуары и готовые анимации. PNG с прозрачным фоном и зацикленное видео — бесплатно, в браузере." />
   <meta name="twitter:image" content="https://adentxxx.github.io/Claymates-Animated-Characters/og-cover.jpg" />
+  <meta name="twitter:image:alt" content="ClayMates — пушистый красный 3D-персонаж с ростком и надпись ClayMates на тёмном фоне" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "ClayMates",
+    "alternateName": "Конструктор 3D-персонажей ClayMates",
+    "url": "https://adentxxx.github.io/Claymates-Animated-Characters/",
+    "description": "Собери милого объёмного 3D-персонажа: форма, материал, эмоции, аксессуары и готовые анимации. Скачай PNG с прозрачным фоном или зацикленное видео WebM и MP4 — бесплатно, прямо в браузере.",
+    "image": "https://adentxxx.github.io/Claymates-Animated-Characters/og-cover.jpg",
+    "inLanguage": "ru",
+    "applicationCategory": "DesignApplication",
+    "operatingSystem": "Any (web browser)",
+    "browserRequirements": "Requires WebGL",
+    "isAccessibleForFree": true,
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "author": { "@type": "Person", "name": "hereisalex", "url": "https://hereisalex.art/" },
+    "codeRepository": "https://github.com/adentxxx/Claymates-Animated-Characters"
+  }
+  </script>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><path fill='%235b5cf0' d='M20 4C25 11 33 17 33 25a13 13 0 0 1-26 0C7 17 15 11 20 4Z'/><circle cx='16' cy='25' r='2.4'/><circle cx='24' cy='25' r='2.4'/></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -25,13 +52,15 @@
   <style>
     /* intro: until the character is in place only the stage is visible (applies before the app CSS loads) */
     body.intro #panel, body.intro .presets-wrap, body.intro .stage-dock, body.intro .about { opacity: 0; pointer-events: none; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
   </style>
 </head>
 <body class="intro">
   <div id="app">
     <main id="stage">
-      <canvas id="c"></canvas>
-
+      <h1 class="sr-only">ClayMates — конструктор 3D-персонажей с анимацией</h1>
+      <p class="sr-only">Соберите объёмного персонажа: выберите форму тела, материал (матовый, глянцевый, свечение, плюш), эмоцию, глаза, руки и ноги, шапку, очки и другие аксессуары, затем готовую анимацию. Скачайте PNG 2048×2048 с прозрачным фоном или зацикленное видео WebM и MP4.</p>
+      <canvas id="c" role="img" aria-label="3D-персонаж, которого вы настраиваете"></canvas>
 
       <div class="presets-wrap"><div class="presets" id="presets"></div></div>
 

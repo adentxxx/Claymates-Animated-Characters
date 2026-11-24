@@ -28,6 +28,8 @@ const state = loadFromHash() || presetState(0); // opens with the first preset (
 // embed mode (?embed): only the character, transparent background — used by the <iframe> code
 const EMBED = new URLSearchParams(location.search).has('embed');
 if (EMBED) document.body.classList.add('embed');
+// the bare embed view should not show up in search results
+if (EMBED) { const m = document.createElement('meta'); m.name = 'robots'; m.content = 'noindex'; document.head.appendChild(m); document.querySelector('meta[name="robots"][content^="index"]')?.remove(); }
 state.material = normalizeMaterial(state.material);
 
 /* ---------------- renderer & scene ---------------- */

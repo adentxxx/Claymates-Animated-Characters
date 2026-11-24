@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://adentxxx.github.io/Claymates-Animated-Characters/sitemap.xml
