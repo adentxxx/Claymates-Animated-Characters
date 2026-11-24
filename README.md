@@ -1,6 +1,6 @@
 # ClayMates — 3D Character Maker with Animations
 
-**Live:** https://adentxxx.github.io/Claymates-Animated-Characters/
+**Live:** https://claymates.fun/
 
 A browser-based maker for cute, chunky 3D characters. Pick a shape, material, face, emotion, limbs and accessories, and the character comes alive with ready-made animations.
 

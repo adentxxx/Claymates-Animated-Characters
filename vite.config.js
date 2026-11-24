@@ -1,11 +1,11 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'node:path';
 
-// Production build for GitHub Pages, served from /Claymates-Animated-Characters/.
+// Production build for GitHub Pages on the custom domain https://claymates.fun (public/CNAME).
 // The build uses an absolute base: GitHub serves 404.html for any missing address, including
-// nested ones (/Claymates-Animated-Characters/a/b), where relative asset paths would break.
-export default defineConfig(({ command }) => ({
-  base: command === 'build' ? '/Claymates-Animated-Characters/' : '/',
+// nested ones (/a/b), where relative asset paths would break.
+export default defineConfig(() => ({
+  base: '/',
   build: {
     target: 'es2020',
     minify: 'esbuild',
