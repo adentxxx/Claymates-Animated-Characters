@@ -4,6 +4,7 @@
 // note with a check that draws itself, then fades away. Same springs as the original
 // (tokens.css: pop 520/16, settle 280/22, soft 260/24, fade 420/32, plus the component's own).
 import { S, tune, step, clamp, register } from './motion.js';
+import { nbsp } from './typo.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const SPRING = { pop: [520, 16], settle: [280, 22], soft: [260, 24], fade: [420, 32] };
@@ -43,8 +44,8 @@ export function createCookieBanner({ onChoice, onMore }) {
       <div class="cb-top">
         <div class="cb-plate">${COOKIE_SVG}<i class="cb-crumbs"></i></div>
         <div class="cb-copy">
-          <h3>Cookies, freshly baked</h3>
-          <p>We use analytics cookies to see which characters people make. No ads. <button class="cb-more" type="button">Learn more</button></p>
+          <h3>${nbsp('Cookies, freshly baked')}</h3>
+          <p>${nbsp('We use analytics cookies to see which characters people make. No ads.')} <button class="cb-more" type="button">Learn more</button></p>
         </div>
       </div>
       <div class="cb-row">

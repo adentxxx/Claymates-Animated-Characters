@@ -2,13 +2,14 @@
 // what they collect and how to change the choice. Same look as the "Export code" modal.
 // Only the services that have an ID in analytics.config.js are listed.
 import { YANDEX_METRIKA_ID, GA4_ID } from './analytics.config.js';
+import { nbsp } from './typo.js';
 
 const ALL_SERVICES = [
   {
     on: Boolean(YANDEX_METRIKA_ID),
     name: 'Yandex Metrica',
     who: 'Yandex LLC, Russia',
-    what: 'Visits, pages, time on site, clicks, scrolling and anonymised session recordings (Webvisor), approximate location from the IP address, device and browser.',
+    what: 'Visits, pages, time on site, clicks, scrolling and anonymized session recordings (Webvisor), approximate location from the IP address, device and browser.',
     cookies: '_ym_uid and related cookies, kept for up to 1 year',
     link: 'https://yandex.com/legal/confidential/',
   },
@@ -36,16 +37,16 @@ export function createPrivacyModal() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
         </button>
       </header>
-      <p class="em-lead">If you accept cookies, ClayMates uses ${COUNT} analytics service${SERVICES.length === 1 ? '' : 's'} to learn how the site is used: which shapes, materials and animations people pick, and what they download. Nothing is loaded until you accept.</p>
+      <p class="em-lead">${nbsp(`If you accept cookies, ClayMates uses ${COUNT} analytics service${SERVICES.length === 1 ? '' : 's'} to learn how the site is used: which shapes, materials and animations people pick, and what they download. Nothing is loaded until you accept.`)}</p>
       <ul class="pm-list">
         ${SERVICES.map((s) => `
           <li>
             <div class="pm-name"><b>${s.name}</b><span>${s.who}</span></div>
-            <p>${s.what}</p>
-            <p class="pm-meta">Cookies: ${s.cookies} · <a href="${s.link}" target="_blank" rel="noopener">Privacy policy</a></p>
+            <p>${nbsp(s.what)}</p>
+            <p class="pm-meta">${nbsp(`Cookies: ${s.cookies}`)} · <a href="${s.link}" target="_blank" rel="noopener">Privacy policy</a></p>
           </li>`).join('')}
       </ul>
-      <p class="pm-note">No ads, no selling of data, and we never see your name or email. You can change your choice any time: <b>«i»</b> button → <b>Cookie settings</b>.</p>
+      <p class="pm-note">${nbsp('No ads, no selling of data, and we never see your name or email. You can change your choice any time:')} <b>«i»</b> button → <b>Cookie settings</b>.</p>
       <button class="em-copy pm-ok" type="button">Got it</button>
     </div>`;
   document.body.appendChild(root);
