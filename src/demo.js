@@ -1,12 +1,14 @@
-// Scripted product demo, for recording a promo video of the site.
-//   https://claymates.fun/?demo          plays the tour after the intro (record it with any screen recorder)
-//   https://claymates.fun/?demo&record   shows a "Start recording" button: the tab records itself and
-//                                        downloads the video when the tour ends (Chrome / Edge)
+// Scripted product demo, for recording a promo video of the site. Local dev server only
+// (`npm run dev`): the production build does not include this file or its styles.
+//   http://127.0.0.1:5173/?demo          plays the tour after the intro (record it with any screen recorder)
+//   http://127.0.0.1:5173/?demo&record   shows a "Start recording" button: the tab records itself and
+//                                        downloads an MP4 when the tour ends (Chrome / Edge)
 // The tour: the site opens → the camera zooms into the settings panel → the shape grid lifts and its
 // tiles light up one by one → a few shapes are picked (each click with an expanding ring) → the
 // Emotion tab → the emotions light up → a few emotions are picked → the camera pulls back.
 // Camera, cursor and press use springs from the site's motion engine.
 import { S, step, register } from './motion.js';
+import './demo.css';
 
 const app = document.getElementById('app');
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));

@@ -1,0 +1,38 @@
+/* Demo tour styles (dev only: imported by src/demo.js, which the production build leaves out). */
+/* ---------- ?demo: scripted tour for the promo video ---------- */
+body.demo, body.demo * { cursor: none !important; }
+/* the zoomed page must never scroll or spill out: no page scrollbar, nothing drawn past the window */
+html:has(body.demo), body.demo { overflow: hidden !important; height: 100%; }
+body.demo #app { will-change: transform; }
+.demo-cursor {
+  /* iPadOS-style pointer: a soft translucent grey dot */
+  position: fixed; left: 0; top: 0; z-index: 90; width: 22px; height: 22px; margin: -11px 0 0 -11px; pointer-events: none;
+  border-radius: 50%; background: rgba(60, 60, 67, .34); box-shadow: 0 0 0 .5px rgba(255, 255, 255, .5), 0 2px 8px rgba(20, 20, 40, .18);
+  will-change: transform, opacity;   /* no backdrop blur: over the 3D canvas it stalls the frame when the dot appears */
+  opacity: 0; transform-origin: 50% 50%;
+}
+/* click: a ring that grows out of the click point and fades */
+.demo-ring {
+  position: fixed; z-index: 89; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; pointer-events: none;
+  border: 3px solid var(--accent); background: rgba(91, 92, 240, .16);
+  animation: demo-ring .62s cubic-bezier(.2, .8, .3, 1) forwards;
+}
+@keyframes demo-ring {
+  0% { transform: scale(.15); opacity: .95; }
+  60% { opacity: .55; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+/* a grid being presented: it lifts a little and glows, its tiles light up one by one */
+body.demo .shape-grid { transition: transform .5s cubic-bezier(.2, .9, .3, 1.35), box-shadow .45s, background .45s; border-radius: 18px; }
+.shape-grid.demo-group {
+  transform: scale(1.04); background: rgba(91, 92, 240, .06);
+  box-shadow: 0 0 0 2px rgba(91, 92, 240, .55), 0 16px 40px rgba(91, 92, 240, .22);
+}
+body.demo .shape-btn { transition: background .15s, box-shadow .15s, color .15s, transform .28s cubic-bezier(.2, .9, .3, 1.4); }
+.shape-btn.demo-pulse { transform: scale(1.1); color: var(--accent); background: rgba(91, 92, 240, .12); }
+/* ?demo&record: start screen */
+.demo-gate { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: #eef0f6; }
+.demo-gate-card { max-width: 380px; padding: 24px; border-radius: 22px; background: #fff; border: var(--float-edge); box-shadow: var(--float-shadow); text-align: center; }
+.demo-gate-card b { font-weight: 800; }
+.demo-gate-card p { margin: 8px 0 18px; font-size: 14px; line-height: 1.5; color: var(--muted); }
+.demo-gate-card button { height: 46px; padding: 0 22px; border-radius: 14px; background: var(--ink); color: #fff; font-weight: 800; cursor: pointer !important; }

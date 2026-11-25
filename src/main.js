@@ -31,7 +31,7 @@ const state = loadFromHash() || presetState(0); // opens with the first preset (
 // embed mode (?embed): only the character, transparent background — used by the <iframe> code
 const EMBED = new URLSearchParams(location.search).has('embed');
 // ?demo plays a scripted tour for recording a promo video (src/demo.js); ?demo&record records the tab
-const DEMO = new URLSearchParams(location.search).has('demo');
+const DEMO = import.meta.env.DEV && new URLSearchParams(location.search).has('demo');   // dev server only
 if (EMBED) document.body.classList.add('embed');
 // the bare embed view should not show up in search results
 if (EMBED) { const m = document.createElement('meta'); m.name = 'robots'; m.content = 'noindex'; document.head.appendChild(m); document.querySelector('meta[name="robots"][content^="index"]')?.remove(); }
@@ -615,14 +615,14 @@ addEventListener('visibilitychange', () => {
 
 window.__claymates = { state, hero, renderer, scene, camera, exportVideo, draw };
 
-// demo tour (loaded only with ?demo)
+// demo tour (dev server only, loaded with ?demo)
 function replayIntro() {
   introT = 0; revealed = false;
   document.body.classList.remove('panel-open');
   document.body.classList.add('intro');
   hero.root.scale.setScalar(0.001);
 }
-if (DEMO && !EMBED) {
+if (import.meta.env.DEV && DEMO && !EMBED) {   // the whole branch (and demo.js) is dropped from the production build
   import('./demo.js').then((d) => {
     if (new URLSearchParams(location.search).has('record')) d.setupRecording(replayIntro);
     else d.playTour();
