@@ -8,14 +8,18 @@ import { S, step, register } from './motion.js';
 /**
  * @param {HTMLElement} btn    the button (moved and scaled)
  * @param {HTMLElement} label  its content (moves a bit further)
- * @param {{ radius?: number }} o
+ * @param {{ radius?: number, enterDelay?: number }} o  enterDelay: pop in (scale with a bounce) after this many seconds
  */
 export function magnetic(btn, label, o = {}) {
   const R = o.radius ?? 130;
   const bx = S(0, [170, 13]), by = S(0, [170, 13]);
   const lx = S(0, [220, 15]), ly = S(0, [220, 15]);
   const sc = S(1, [400, 18]);
-  const springs = [bx, by, lx, ly, sc];
+  const enter = S(o.enterDelay == null ? 1 : 0, [520, 16]);   // entrance: shared "pop" spring, with a bounce
+  const springs = [bx, by, lx, ly, sc, enter];
+  let clock = 0;
+  if (o.enterDelay != null) btn.style.transform = 'scale(0)';   // invisible until it pops in
+  btn.classList.add('mag-ready');
   let px = null, py = null, pressed = false, awake = true;
   const wake = () => { awake = true; };
 
@@ -32,6 +36,8 @@ export function magnetic(btn, label, o = {}) {
   register({
     sleeping: () => !awake,
     frame(dt) {
+      clock += dt;
+      if (o.enterDelay != null && clock >= o.enterDelay) enter.t = 1;
       // the button's resting centre (its layout box, without our own transform)
       const r = btn.getBoundingClientRect();
       const cx = r.left + r.width / 2 - bx.x, cy = r.top + r.height / 2 - by.x;
@@ -47,10 +53,11 @@ export function magnetic(btn, label, o = {}) {
       springs.forEach((s) => step(s, dt));
     },
     render() {
-      btn.style.transform = `translate(${bx.x.toFixed(2)}px,${by.x.toFixed(2)}px) scale(${sc.x.toFixed(4)})`;
+      btn.style.transform = `translate(${bx.x.toFixed(2)}px,${by.x.toFixed(2)}px) scale(${(sc.x * Math.max(0, enter.x)).toFixed(4)})`;
       label.style.transform = `translate(${lx.x.toFixed(2)}px,${ly.x.toFixed(2)}px)`;
       // rest once everything has settled; the next pointer move wakes it
-      if (springs.every((s) => Math.abs(s.x - s.t) < 0.01 && Math.abs(s.v) < 0.01)) awake = false;
+      const entering = o.enterDelay != null && clock < o.enterDelay;
+      if (!entering && springs.every((s) => Math.abs(s.x - s.t) < 0.01 && Math.abs(s.v) < 0.01)) awake = false;
     },
   });
 }

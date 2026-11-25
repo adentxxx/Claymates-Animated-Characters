@@ -19,7 +19,6 @@ const home = document.getElementById('home');
 home.href = import.meta.env.BASE_URL;
 track('page_404', { path: location.pathname });
 home.addEventListener('click', () => track('404_home_click'));
-magnetic(home, home.querySelector('.mag-lbl'));   // round button that leans toward the cursor
 let pushed = false;
 
 /* ---------- quality tier from what the device reports ---------- */
@@ -72,7 +71,11 @@ function layout() {
   // the digits sit inside their line box: trim the empty space above and below them
   const code = document.getElementById('code').getBoundingClientRect();
   toWorld(code, obstacles[0], code.height * 0.12, code.width * 0.02);
-  toWorld(home.getBoundingClientRect(), obstacles[1]);   // the round button: characters roll off it
+  // the round button: characters roll off it. Measured by its layout size, not its on-screen box,
+  // which is scaled while it pops in (its centre does not move when it scales)
+  const hb = home.getBoundingClientRect(), hw = home.offsetWidth, hh = home.offsetHeight;
+  const hx = hb.left + hb.width / 2, hy = hb.top + hb.height / 2;
+  toWorld({ left: hx - hw / 2, top: hy - hh / 2, width: hw, height: hh }, obstacles[1]);
   obstacles[1].r = Math.min(obstacles[1].hw, obstacles[1].hh);
 }
 addEventListener('resize', () => { layout(); wake(); });
@@ -270,6 +273,8 @@ window.__nf = { bodies, tick, tier: TIER, get running() { return running; } }; /
 const CODE_GRADIENT = 'linear-gradient(135deg, #5b5cf0 0%, #ff3fbf 55%, #ffc531 100%)';
 (document.fonts ? document.fonts.ready : Promise.resolve()).then(async () => {
   weightWave(document.getElementById('code'), { gradient: CODE_GRADIENT, light: 300, bold: 820 });
+  // round button that leans toward the cursor; pops in right after the three digits
+  magnetic(home, home.querySelector('.mag-lbl'), { enterDelay: 0.45 });
   layout();
   await prepare(COUNT);
   raining = true;

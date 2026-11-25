@@ -32,7 +32,8 @@ body {
 .ww .ww-ch {
   display: inline-block; white-space: pre; font-weight: 300; opacity: 0;
   background-repeat: no-repeat; -webkit-background-clip: text; background-clip: text; color: transparent;
-  will-change: transform, opacity, filter, font-weight;
+  transform: scale(0); transform-origin: 50% 60%;
+  will-change: transform, opacity, font-weight;
 }
 
 /* round magnetic "Back to home" button (moved and scaled by magnetic.js) */

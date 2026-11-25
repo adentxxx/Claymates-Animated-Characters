@@ -1,8 +1,8 @@
 // Weight wave — port of the "Weight wave" motion component (designbookmark.com/motion), plus a
-// blur-in reveal. Each letter's weight is a spring pulled toward a bell curve around the pointer,
+// bouncy scale-in entrance. Each letter's weight is a spring pulled toward a bell curve around the pointer,
 // so a swell of bold rolls through the word as you move; with nobody pointing, the swell sweeps
 // back and forth by itself. Springs as in the original: weight 260/22, swell position 150/22;
-// the reveal uses the shared "soft" spring 260/24. Needs a variable font (here: Unbounded 200–900).
+// the entrance uses the shared "pop" spring 520/16. Needs a variable font (here: Unbounded 200–900).
 // The gradient fill is split across the letters (each one shows its own slice of the same
 // gradient), so per-letter opacity and blur still work with background-clip: text.
 import { S, step, clamp, register } from './motion.js';
@@ -26,7 +26,8 @@ export function weightWave(el, o = {}) {
     if (o.gradient) span.style.backgroundImage = o.gradient;
     el.appendChild(span);
     // reveal: each letter blurs in a moment after the previous one
-    return { el: span, w: S(LIGHT, [260, 22]), a: S(0, [260, 24]), at: (o.delay ?? 0.25) + i * (o.stagger ?? 0.22), g: 0 };
+    // entrance: the shared "pop" spring (520/16) overshoots, so each letter lands with a bounce
+    return { el: span, w: S(LIGHT, [260, 22]), a: S(0, [520, 16]), at: (o.delay ?? 0.05) + i * (o.stagger ?? 0.12), g: 0 };
   });
 
   const focus = S(-0.2, [150, 22]);   // where the swell is: 0 = left end of the word, 1 = right end
@@ -63,13 +64,12 @@ export function weightWave(el, o = {}) {
         const d = ((left + width / 2) / total - focus.x) / SPREAD;
         l.g = Math.exp(-d * d);
         l.w.t = LIGHT + (BOLD - LIGHT) * l.g;
-        const a = clamp(l.a.x, 0, 1.2);
+        const a = Math.max(0, l.a.x);   // goes past 1 on the bounce
         const weightLight = 0.42 + 0.58 * clamp((l.w.x - LIGHT) / (BOLD - LIGHT), 0, 1);
         const s = l.el.style;
         s.fontWeight = clamp(l.w.x, 100, 900).toFixed(1);
-        s.opacity = (weightLight * clamp(a, 0, 1)).toFixed(3);
-        s.filter = a < 0.995 ? `blur(${((1 - clamp(a, 0, 1)) * 22).toFixed(2)}px)` : 'none';
-        s.transform = `translateY(${((1 - a) * 18).toFixed(2)}px) scale(${(0.9 + 0.1 * a).toFixed(4)})`;
+        s.opacity = (weightLight * clamp(a * 2.5, 0, 1)).toFixed(3);
+        s.transform = `scale(${a.toFixed(4)})`;
         // this letter's slice of the word-wide gradient
         s.backgroundSize = `${total}px 100%`;
         s.backgroundPosition = `${-left}px 0`;
