@@ -19,6 +19,11 @@ function frame(rect, maxScale = 2.2, margin = 0.86) {
   cam.s.t = Math.max(1, s);
   cam.x.t = innerWidth / 2 - cam.s.t * (rect.left + rect.width / 2);
   cam.y.t = innerHeight / 2 - cam.s.t * (rect.top + rect.height / 2);
+  // never let the edge of the page come into view (behind it is the plain body background, a
+  // visible seam next to the stage gradient): the zoomed page always covers the whole frame.
+  // Scale and offset ride the same spring, so every in-between frame is covered as well.
+  cam.x.t = Math.min(0, Math.max(innerWidth * (1 - cam.s.t), cam.x.t));
+  cam.y.t = Math.min(0, Math.max(innerHeight * (1 - cam.s.t), cam.y.t));
 }
 function rest() { cam.s.t = 1; cam.x.t = 0; cam.y.t = 0; }
 // a rectangle as it is laid out, i.e. without the camera transform
@@ -32,10 +37,9 @@ const union = (a, b) => {
 };
 const pad = (r, p) => ({ left: r.left - p, top: r.top - p, width: r.width + 2 * p, height: r.height + 2 * p });
 
-/* ---------- cursor + click ring ---------- */
+/* ---------- pointer (an iPadOS-style translucent dot) + click ring ---------- */
 const cursor = document.createElement('div');
 cursor.className = 'demo-cursor';
-cursor.innerHTML = '<svg viewBox="0 0 28 28" aria-hidden="true"><path d="M5 3.5 22.5 15l-8 1.6 4.6 8.1-3.3 1.8-4.6-8.1-6 5.5Z"/></svg>';
 document.body.appendChild(cursor);
 const cur = { x: S(innerWidth * 0.45, [170, 20]), y: S(innerHeight * 0.6, [170, 20]), o: S(0, [420, 32]), p: S(1, [520, 16]) };
 
@@ -55,7 +59,7 @@ async function moveTo(el, ms = 620) {
 async function click(el) {
   await moveTo(el);
   const [x, y] = centre(el);
-  cur.p.x = 0.8;                                       // the cursor dips, then springs back
+  cur.p.x = 0.72;                                      // the dot shrinks on the press, then springs back
   ring(x, y);
   el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1, clientX: x, clientY: y }));
 }
@@ -63,9 +67,11 @@ async function click(el) {
 register({
   frame(dt) { for (const s of [cam.s, cam.x, cam.y, cur.x, cur.y, cur.o, cur.p]) step(s, dt); },
   render() {
-    const moving = Math.abs(cam.s.x - 1) > 1e-3 || Math.abs(cam.x.x) > 0.1 || Math.abs(cam.y.x) > 0.1;
+    // during the demo the transform is never removed: dropping it and adding it back makes the
+    // browser rebuild and repaint the whole page layer (~0.27 s stall at the start of each camera move)
     app.style.transformOrigin = '0 0';
-    app.style.transform = moving ? `translate(${cam.x.x.toFixed(2)}px,${cam.y.x.toFixed(2)}px) scale(${cam.s.x.toFixed(4)})` : '';
+    app.style.transform = document.body.classList.contains('demo')
+      ? `translate(${cam.x.x.toFixed(2)}px,${cam.y.x.toFixed(2)}px) scale(${cam.s.x.toFixed(4)})` : '';
     cursor.style.opacity = Math.max(0, Math.min(1, cur.o.x)).toFixed(3);
     cursor.style.transform = `translate(${cur.x.x.toFixed(1)}px,${cur.y.x.toFixed(1)}px) scale(${cur.p.x.toFixed(3)})`;
   },
@@ -88,6 +94,44 @@ async function showcase(grid) {
 const chip = (label) => [...document.querySelectorAll('#tabs .jelly-radio__chip')].find((c) => c.textContent.trim() === label);
 const visibleGrid = () => [...document.querySelectorAll('#controls .shape-grid')].find((g) => g.offsetParent !== null);
 const tile = (grid, label) => [...grid.querySelectorAll('.shape-btn')].find((b) => b.textContent.trim() === label);
+
+const TOUR_SHAPES = ['Heart', 'Star', 'Cloud', 'Ghost', 'Bean', 'Cube'];
+const TOUR_EMOTIONS = ['Joy', 'Love', 'Surprised', 'Sleepy', 'Silly', 'Happy'];
+
+// builds every shape and emotion of the tour once (meshes are cached, effect textures uploaded)
+async function warmUp() {
+  while (document.body.classList.contains('intro')) await wait(100);
+  if (document.body.dataset.stage !== 'design') document.querySelector('.sb-tool')?.click();
+  chip('Shape')?.click(); await wait(250);
+  let grid = visibleGrid();
+  const shape0 = grid.querySelector('.shape-btn.on');
+  for (const n of TOUR_SHAPES) { tile(grid, n)?.click(); await wait(80); }
+  shape0?.click(); await wait(80);
+  chip('Emotion')?.click(); await wait(250);
+  grid = visibleGrid();
+  const emo0 = grid.querySelector('.shape-btn.on');
+  for (const n of TOUR_EMOTIONS) { tile(grid, n)?.click(); await wait(300); }
+  emo0?.click(); await wait(200);
+  chip('Shape')?.click(); await wait(400);
+}
+
+// turns the recording into an MP4 (H.264, steady 60 fps) and drops its first `seconds` (the warm-up)
+async function toMp4(blob, seconds) {
+  try {
+    const mb = await import('mediabunny');
+    const input = new mb.Input({ source: new mb.BlobSource(blob), formats: mb.ALL_FORMATS });
+    const output = new mb.Output({ format: new mb.Mp4OutputFormat({ fastStart: 'in-memory' }), target: new mb.BufferTarget() });
+    const conversion = await mb.Conversion.init({
+      input, output, trim: { start: seconds },
+      video: { codec: 'avc', quality: mb.QUALITY_VERY_HIGH, frameRate: 60 },
+    });
+    if (!conversion.isValid) return null;
+    await conversion.execute();
+    return new Blob([output.target.buffer], { type: 'video/mp4' });
+  } catch {
+    return null;   // keep the raw recording rather than nothing
+  }
+}
 
 /** Plays the whole tour once. */
 export async function playTour() {
@@ -115,7 +159,7 @@ export async function playTour() {
   // 2) pull back to see the character, then try a few shapes
   frame(pad(union(character, laidOut(grid)), 40), 1.5, 0.92);
   await wait(900);
-  for (const name of ['Heart', 'Star', 'Cloud', 'Ghost', 'Bean', 'Cube']) {
+  for (const name of TOUR_SHAPES) {
     const t = tile(grid, name);
     if (!t) continue;
     await click(t);
@@ -133,7 +177,7 @@ export async function playTour() {
   // 4) pull back and try a few emotions
   frame(pad(union(character, laidOut(grid)), 40), 1.5, 0.92);
   await wait(900);
-  for (const name of ['Joy', 'Love', 'Surprised', 'Sleepy', 'Silly', 'Happy']) {
+  for (const name of TOUR_EMOTIONS) {
     const t = tile(grid, name);
     if (!t) continue;
     await click(t);
@@ -149,6 +193,7 @@ export async function playTour() {
 
 /* ---------- in-tab recording (?demo&record) ---------- */
 export function setupRecording(replayIntro) {
+  document.body.classList.add('demo');
   const gate = document.createElement('div');
   gate.className = 'demo-gate';
   gate.innerHTML = `<div class="demo-gate-card">
@@ -167,24 +212,37 @@ export function setupRecording(replayIntro) {
     } catch {
       return;   // sharing was cancelled: keep the button
     }
-    const type = ['video/mp4;codecs=avc1.640028', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'].find((t) => MediaRecorder.isTypeSupported(t));
+    // WebM is the most reliable thing Chrome records; it is turned into an MP4 at the end
+    const type = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'].find((t) => MediaRecorder.isTypeSupported(t));
     const rec = new MediaRecorder(stream, { mimeType: type, videoBitsPerSecond: 20e6 });
     const chunks = [];
     rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
     const stopped = new Promise((r) => { rec.onstop = r; });
-    gate.remove();
-    await wait(400);                     // let the sharing prompt disappear from the picture
-    replayIntro();
+    const card = gate.querySelector('.demo-gate-card');
+    card.innerHTML = '<b>Getting ready…</b>';
     rec.start();
+    const t0 = performance.now();
+    // pre-roll (cut later): the capture and the encoder warm up while every shape and emotion of
+    // the tour is built once behind the card, so nothing stalls on camera
+    await warmUp();
+    await wait(600);
+    const cut = (performance.now() - t0) / 1000;
+    gate.style.display = 'none';
+    replayIntro();
     await playTour();
     rec.stop();
     await stopped;
     stream.getTracks().forEach((t) => t.stop());
-    const blob = new Blob(chunks, { type: type.split(';')[0] });
+    const raw = new Blob(chunks, { type: type.split(';')[0] });
+    gate.style.display = '';
+    card.innerHTML = '<b>Preparing the video…</b>';
+    const blob = (await toMp4(raw, cut)) || raw;
+    window.__demoVideo = { blob, type: blob.type };   // also kept for automated recording scripts
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `claymates-demo.${type.includes('mp4') ? 'mp4' : 'webm'}`;
+    a.download = `claymates-demo.${blob.type.includes('mp4') ? 'mp4' : 'webm'}`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    gate.remove();
   });
 }

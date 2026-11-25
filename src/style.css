@@ -505,10 +505,12 @@ body.demo, body.demo * { cursor: none !important; }
 #app { will-change: auto; }
 body.demo #app { will-change: transform; }
 .demo-cursor {
-  position: fixed; left: 0; top: 0; z-index: 90; width: 30px; height: 30px; margin: -3px 0 0 -5px; pointer-events: none;
-  opacity: 0; transform-origin: 5px 3px; filter: drop-shadow(0 3px 6px rgba(20, 20, 40, .28));
+  /* iPadOS-style pointer: a soft translucent grey dot */
+  position: fixed; left: 0; top: 0; z-index: 90; width: 22px; height: 22px; margin: -11px 0 0 -11px; pointer-events: none;
+  border-radius: 50%; background: rgba(60, 60, 67, .34); box-shadow: 0 0 0 .5px rgba(255, 255, 255, .5), 0 2px 8px rgba(20, 20, 40, .18);
+  will-change: transform, opacity;   /* no backdrop blur: over the 3D canvas it stalls the frame when the dot appears */
+  opacity: 0; transform-origin: 50% 50%;
 }
-.demo-cursor svg { width: 100%; height: 100%; fill: #17171f; stroke: #fff; stroke-width: 1.8; stroke-linejoin: round; }
 /* click: a ring that grows out of the click point and fades */
 .demo-ring {
   position: fixed; z-index: 89; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; pointer-events: none;

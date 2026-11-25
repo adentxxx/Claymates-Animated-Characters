@@ -565,7 +565,8 @@ if (EMBED && 'IntersectionObserver' in window) {
 // frame-time watchdog: if the average frame is slow for ~2 s, render fewer pixels
 const perf = { t: 0, n: 0, sum: 0 };
 function watchFrameTime(dt) {
-  if (introT >= 0 || recording || document.hidden) return;
+  // (not during exports or the demo: switching the resolution resizes the canvas, a visible hitch on video)
+  if (introT >= 0 || recording || DEMO || document.hidden) return;
   perf.t += dt; perf.n++; perf.sum += Math.min(dt, 0.1);
   if (perf.t < 2) return;
   const avg = perf.sum / perf.n;

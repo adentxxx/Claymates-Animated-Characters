@@ -70,6 +70,8 @@ function fxTextures() {
   return FX_TEX;
 }
 
+const BODY_CACHE = new Map();   // shape params + mesh cell → BufferGeometry (shared by all characters)
+
 export class Character {
   constructor() {
     this.root = new THREE.Group();
@@ -113,8 +115,24 @@ export class Character {
     const sdf = makeSDF(st);
     // quality: 'high' | 'low' (fast preview while dragging) | a mesh cell size in world units
     const cell = typeof quality === 'number' ? quality : quality === 'low' ? 0.07 : 0.032;
-    const geo = buildBodyGeometry(sdf, cell, quality !== 'low');
-    this.bodyMesh.geometry.dispose();
+    // meshing takes 100–300 ms: remember recent bodies, so going back to one is instant
+    const key = [st.shape, st.width, st.height, st.depth, st.taper, st.wobble, st.seed, cell].join('|');
+    let geo = BODY_CACHE.get(key);
+    if (geo) { BODY_CACHE.delete(key); BODY_CACHE.set(key, geo); }      // most recently used last
+    else {
+      geo = buildBodyGeometry(sdf, cell, quality !== 'low');
+      geo.userData.cached = quality !== 'low';                       // drag previews are not kept
+      if (geo.userData.cached) {
+        BODY_CACHE.set(key, geo);
+        while (BODY_CACHE.size > 12) {
+          const [k0, old] = BODY_CACHE.entries().next().value;
+          BODY_CACHE.delete(k0);
+          if (old !== geo && old !== this.bodyMesh.geometry) old.dispose();
+        }
+      }
+    }
+    const prev = this.bodyMesh.geometry;
+    if (prev !== geo && !prev.userData.cached) prev.dispose();
     this.bodyMesh.geometry = geo;
     for (const m of this.furGroup.children) m.geometry = geo;
     this.syncBounds(geo);
