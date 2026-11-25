@@ -30,6 +30,8 @@ function loadFromHash() {
 const state = loadFromHash() || presetState(0); // opens with the first preset (Кубик)
 // embed mode (?embed): only the character, transparent background — used by the <iframe> code
 const EMBED = new URLSearchParams(location.search).has('embed');
+// ?demo plays a scripted tour for recording a promo video (src/demo.js); ?demo&record records the tab
+const DEMO = new URLSearchParams(location.search).has('demo');
 if (EMBED) document.body.classList.add('embed');
 // the bare embed view should not show up in search results
 if (EMBED) { const m = document.createElement('meta'); m.name = 'robots'; m.content = 'noindex'; document.head.appendChild(m); document.querySelector('meta[name="robots"][content^="index"]')?.remove(); }
@@ -266,7 +268,7 @@ const exportMenu = createActionMenu(document.getElementById('export-menu'), [
 // cookie consent: shown once the intro is over, only while the visitor hasn't chosen
 const privacyModal = ANALYTICS_AVAILABLE && !EMBED ? createPrivacyModal() : null;
 const cookieBanner = privacyModal ? createCookieBanner({ onChoice: (granted) => setConsent(granted), onMore: () => privacyModal.open() }) : null;
-if (cookieBanner && !getConsent()) setTimeout(function waitIntro() {
+if (cookieBanner && !getConsent() && !DEMO) setTimeout(function waitIntro() {
   if (document.body.classList.contains('intro')) setTimeout(waitIntro, 300); else setTimeout(() => cookieBanner.open(), 700);
 }, 300);
 createAbout(document.getElementById('about'), cookieBanner ? { onCookies: () => cookieBanner.open() } : {});
@@ -611,3 +613,17 @@ addEventListener('visibilitychange', () => {
 });
 
 window.__claymates = { state, hero, renderer, scene, camera, exportVideo, draw };
+
+// demo tour (loaded only with ?demo)
+function replayIntro() {
+  introT = 0; revealed = false;
+  document.body.classList.remove('panel-open');
+  document.body.classList.add('intro');
+  hero.root.scale.setScalar(0.001);
+}
+if (DEMO && !EMBED) {
+  import('./demo.js').then((d) => {
+    if (new URLSearchParams(location.search).has('record')) d.setupRecording(replayIntro);
+    else d.playTour();
+  });
+}
