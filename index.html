@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ClayMates — Free 3D Character Maker & Avatar Creator</title>
+  <meta name="description" content="Make a cute 3D character online for free: choose a shape, material, emotion and accessories, add an animation, then download a transparent PNG or looping video." />
+  <meta name="keywords" content="3D character maker, 3D character creator, avatar maker, 3D avatar creator, cute character generator, animated character, mascot maker, transparent PNG, looping animation, WebGL" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+  <meta name="author" content="hereisalex" />
+  <meta name="application-name" content="ClayMates" />
+  <meta name="apple-mobile-web-app-title" content="ClayMates" />
+  <meta name="theme-color" content="#eef0f6" />
+  <meta name="color-scheme" content="light" />
+  <link rel="canonical" href="https://claymates.fun/" />
+  <link rel="alternate" hreflang="en" href="https://claymates.fun/" />
+  <link rel="alternate" hreflang="x-default" href="https://claymates.fun/" />
+
+  <!-- link previews (Telegram, VK, X, Slack, WhatsApp, LinkedIn…) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="ClayMates" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:url" content="https://claymates.fun/" />
+  <meta property="og:title" content="ClayMates — make your own cute 3D character" />
+  <meta property="og:description" content="A free 3D character maker in your browser: shapes, materials, emotions, accessories and animations. Download a transparent PNG or a looping video." />
+  <meta property="og:image" content="https://claymates.fun/og-cover.jpg?v=4" />
+  <meta property="og:image:secure_url" content="https://claymates.fun/og-cover.jpg?v=4" />
+  <meta property="og:image:type" content="image/jpeg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="ClayMates: a fluffy yellow 3D cube character with a sprout next to the ClayMates logo on a dark background" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="ClayMates — make your own cute 3D character" />
+  <meta name="twitter:description" content="A free 3D character maker in your browser: shapes, materials, emotions, accessories and animations. Download a transparent PNG or a looping video." />
+  <meta name="twitter:image" content="https://claymates.fun/og-cover.jpg?v=4" />
+  <meta name="twitter:image:alt" content="ClayMates: a fluffy yellow 3D cube character with a sprout next to the ClayMates logo on a dark background" />
+
+  <!-- structured data: the site, the app and its author -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://claymates.fun/#website",
+        "url": "https://claymates.fun/",
+        "name": "ClayMates",
+        "alternateName": "ClayMates 3D Character Maker",
+        "description": "Make a cute 3D character online for free: choose a shape, material, emotion and accessories, add an animation, then download a transparent PNG or looping video.",
+        "inLanguage": "en",
+        "publisher": { "@id": "https://claymates.fun/#author" }
+      },
+      {
+        "@type": "WebApplication",
+        "@id": "https://claymates.fun/#app",
+        "name": "ClayMates",
+        "url": "https://claymates.fun/",
+        "description": "Make a cute 3D character online for free: choose a shape, material, emotion and accessories, add an animation, then download a transparent PNG or looping video.",
+        "image": "https://claymates.fun/og-cover.jpg?v=4",
+        "screenshot": "https://claymates.fun/og-cover.jpg?v=4",
+        "inLanguage": "en",
+        "applicationCategory": "DesignApplication",
+        "applicationSubCategory": "3D character maker",
+        "operatingSystem": "Windows, macOS, Linux, Android, iOS (web browser)",
+        "browserRequirements": "Requires a browser with WebGL",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "keywords": "3D character maker, 3D character creator, avatar maker, 3D avatar creator, cute character generator, animated character, mascot maker, transparent PNG, looping animation, WebGL",
+        "featureList": [
+          "10 body shapes: ball, drop, bean, cube, triangle, pin, heart, cloud, star, ghost",
+          "4 materials: matte, glossy, glow and plush fur",
+          "11 emotions and 5 eye styles",
+          "15 ready-made animations: wave, dance, walk, bounce, jelly and more",
+          "Hats, ears, glasses, ties, bow ties and scarves",
+          "Transparent PNG export, 2048 × 2048",
+          "Seamless looping video export: transparent WebM and MP4",
+          "Shareable link that stores the whole character"
+        ],
+        "author": { "@id": "https://claymates.fun/#author" },
+        "isPartOf": { "@id": "https://claymates.fun/#website" },
+        "codeRepository": "https://github.com/adentxxx/Claymates-Animated-Characters"
+      },
+      {
+        "@type": "Person",
+        "@id": "https://claymates.fun/#author",
+        "name": "hereisalex",
+        "url": "https://hereisalex.art/",
+        "sameAs": ["https://github.com/adentxxx"]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="icon" href="favicon.ico" sizes="48x48" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+  <link rel="manifest" href="site.webmanifest" />
+
+  <!-- fonts load without blocking the first paint -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Unbounded:wght@800&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Unbounded:wght@800&display=swap" media="print" onload="this.media='all'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Unbounded:wght@800&display=swap" /></noscript>
+  <style>
+    /* intro: until the character is in place only the stage is visible (applies before the app CSS loads) */
+    body.intro #panel, body.intro .presets-wrap, body.intro .stage-dock, body.intro .about { opacity: 0; pointer-events: none; }
+    .noscript-msg { position: fixed; inset: 0; display: grid; place-items: center; margin: 0; padding: 24px; text-align: center; font: 600 16px/1.5 system-ui, sans-serif; color: #17171f; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+  </style>
+  <script type="module" crossorigin src="/assets/main-eflnqlOL.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/three-BwhQvMc8.js">
+  <link rel="modulepreload" crossorigin href="/assets/motion-D7iYQn5L.js">
+  <link rel="stylesheet" crossorigin href="/assets/main-BGhm_6n7.css">
+</head>
+<body class="intro">
+  <div id="app">
+    <main id="stage">
+      <header class="sr-only">
+        <h1>ClayMates — free 3D character maker</h1>
+        <p>Create a cute 3D character or avatar right in your browser, no sign-up needed. Choose a body shape, a material — matte, glossy, glowing or plush fur — an emotion, eyes, arms and legs, then add a hat, ears, glasses or a scarf. Bring it to life with a ready-made animation and download it as a transparent PNG or a seamless looping video.</p>
+        <h2>What you can make</h2>
+        <ul>
+          <li>10 body shapes: ball, drop, bean, cube, triangle, pin, heart, cloud, star and ghost</li>
+          <li>4 materials: matte, glossy, glow and plush fur</li>
+          <li>11 emotions, 5 eye styles, brows, blush and mouth</li>
+          <li>15 animations: idle, bounce, wave, dance, walk, spin, nod, talk, cheer, jelly, float, sleep and more</li>
+          <li>Accessories: beret, cap, party hat, crown, halo, bow, sprout, antenna, bunny and cat ears, glasses, tie, bow tie and scarf</li>
+        </ul>
+        <h2>Download and share</h2>
+        <p>Export a 2048 × 2048 PNG with a transparent background, a looping 1440 × 1440 video as transparent WebM or MP4, or copy a link that keeps the whole character. Use your character as an avatar, a mascot, a sticker or in presentations and social posts.</p>
+      </header>
+      <noscript>
+        <p class="noscript-msg">ClayMates is a 3D character maker that runs in your browser. Please enable JavaScript to build your character.</p>
+      </noscript>
+      <canvas id="c" role="img" aria-label="Your 3D character, shown live as you customize it"></canvas>
+
+      <div class="presets-wrap"><div class="presets" id="presets"></div></div>
+
+      <div class="stage-dock"><div class="stagebar" id="stagebar"></div><div id="export-menu"></div></div>
+      <div id="toast"></div>
+      <div id="toast-error" role="alert" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.4v.1"/></svg><span></span><button type="button">Try again</button></div>
+
+      <div class="about" id="about"></div>
+    </main>
+
+    <aside id="panel">
+      <nav class="tabs" id="tabs"></nav>
+      <div id="controls"></div>
+    </aside>
+  </div>
+</body>
+</html>
